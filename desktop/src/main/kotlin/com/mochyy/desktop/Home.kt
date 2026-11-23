@@ -65,7 +65,7 @@ class HomeModel(private val scope: CoroutineScope) {
         moreJob?.cancel()
         state = Load.Loading
         job = scope.launch {
-            withContext(Dispatchers.IO) { YouTube.home(params = chip?.endpoint?.params) }
+            withContext(Dispatchers.IO) { signedIn { YouTube.home(params = chip?.endpoint?.params) } }
                 .onSuccess { page ->
                     if (chips.isEmpty()) chips = page.chips.orEmpty()
                     sections = page.sections.filter { it.items.isNotEmpty() }
@@ -80,7 +80,7 @@ class HomeModel(private val scope: CoroutineScope) {
         val token = continuation ?: return
         if (moreJob?.isActive == true) return
         moreJob = scope.launch {
-            withContext(Dispatchers.IO) { YouTube.home(continuation = token) }.onSuccess { page ->
+            withContext(Dispatchers.IO) { signedIn { YouTube.home(continuation = token) } }.onSuccess { page ->
                 sections = sections + page.sections.filter { it.items.isNotEmpty() }
                 continuation = page.continuation
             }

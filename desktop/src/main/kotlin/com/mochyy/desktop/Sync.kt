@@ -78,17 +78,17 @@ class LibrarySync(private val scope: CoroutineScope, private val library: Librar
 
     // the same shelves the Android app reads; a shelf that fails comes back null and is left alone
     private suspend fun fetch() = Remote(
-        liked = YouTube.playlist("LM").completed().getOrNull()?.songs,
-        albums = YouTube.library("FEmusic_liked_albums").completed().getOrNull()?.items?.filterIsInstance<AlbumItem>(),
-        artists = YouTube.library("FEmusic_library_corpus_artists").completed().getOrNull()?.items?.filterIsInstance<ArtistItem>(),
-        playlists = YouTube.library("FEmusic_liked_playlists").completed().getOrNull()?.items?.filterIsInstance<PlaylistItem>()
+        liked = signedIn { YouTube.playlist("LM").completed() }.getOrNull()?.songs,
+        albums = signedIn { YouTube.library("FEmusic_liked_albums").completed() }.getOrNull()?.items?.filterIsInstance<AlbumItem>(),
+        artists = signedIn { YouTube.library("FEmusic_library_corpus_artists").completed() }.getOrNull()?.items?.filterIsInstance<ArtistItem>(),
+        playlists = signedIn { YouTube.library("FEmusic_liked_playlists").completed() }.getOrNull()?.items?.filterIsInstance<PlaylistItem>()
             ?.filterNot { it.id.removePrefix("VL") in AUTO_PLAYLISTS },
     )
 
     private suspend fun send(change: PendingChange): Boolean = when (change.kind) {
-        PendingChange.SONG -> YouTube.likeVideo(change.target, change.on).isSuccess
-        PendingChange.COLLECTION -> YouTube.likePlaylist(change.target, change.on).isSuccess
-        else -> YouTube.subscribeChannel(change.target, change.on).isSuccess
+        PendingChange.SONG -> signedIn { YouTube.likeVideo(change.target, change.on) }.isSuccess
+        PendingChange.COLLECTION -> signedIn { YouTube.likePlaylist(change.target, change.on) }.isSuccess
+        else -> signedIn { YouTube.subscribeChannel(change.target, change.on) }.isSuccess
     }
 
     companion object {

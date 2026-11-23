@@ -5,7 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.music.innertube.YouTube
 import com.music.innertube.utils.parseCookieString
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -48,8 +54,41 @@ class AccountStore(private val file: File = dataFile("account.json")) {
     var session by mutableStateOf(load())
         private set
 
+    private val refreshing = Mutex()
+
     init {
         use(session)
+        current = this
+    }
+
+    /**
+     * Google rotates a signed-in browser's session cookies every few minutes and voids the old ones,
+     * so the copy taken at sign-in goes stale (401). This reads the browser again for the same session,
+     * known by its SAPISID, which doesn't rotate. True when there's a newer cookie to use.
+     */
+    suspend fun refresh(): Boolean = withContext(Dispatchers.IO) {
+        val before = session?.cookie
+        refreshing.withLock {
+            val now = session ?: return@withLock false
+            // someone else refreshed while this caller waited
+            if (now.cookie != before) return@withLock true
+            val id = sapisid(now.cookie) ?: return@withLock false
+            val fresh = BrowserCookies.find().map { it.cookie }.firstOrNull { sapisid(it) == id } ?: return@withLock false
+            if (fresh == now.cookie) return@withLock false
+            val updated = now.copy(cookie = fresh)
+            use(updated)
+            save(updated)
+            session = updated
+            true
+        }
+    }
+
+    /** picks up the browser's rotations in the background, so a request rarely meets a stale cookie */
+    fun keepFresh(scope: CoroutineScope) = scope.launch {
+        while (isActive) {
+            delay(4 * 60_000L)
+            if (session != null) refresh()
+        }
     }
 
     /** checks the cookie against YouTube Music and keeps it only if it names an account */
@@ -98,6 +137,11 @@ class AccountStore(private val file: File = dataFile("account.json")) {
     }
 
     companion object {
+        /** the app's account, for [signedIn] */
+        @Volatile
+        var current: AccountStore? = null
+            private set
+
         private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
         private val VISITOR_DATA = Regex("\"VISITOR_DATA\":\"([^\"]+)\"")
         private val DATASYNC_ID = Regex("\"DATASYNC_ID\":\"([^\"]+)\"")
@@ -124,6 +168,18 @@ fun ownDataSyncId(id: String): String =
 fun cleanCookie(raw: String): String =
     parseCookieString(raw.replace(Regex("^\\s*cookie:\\s*", RegexOption.IGNORE_CASE), "").replace(Regex("[\\r\\n]+"), " "))
         .entries.joinToString("; ") { "${it.key}=${it.value}" }
+
+/**
+ * Runs a YouTube request; if it comes back 401 (a sign-in the browser has rotated away), reads the
+ * session again and tries once more.
+ */
+suspend fun <T> signedIn(fetch: suspend () -> Result<T>): Result<T> {
+    val first = fetch()
+    val unauthorized = first.exceptionOrNull()?.message.orEmpty().contains("invalid: 401")
+    return if (unauthorized && AccountStore.current?.refresh() == true) fetch() else first
+}
+
+private fun sapisid(cookie: String) = parseCookieString(cookie).let { it["SAPISID"] ?: it["__Secure-3PAPISID"] }
 
 fun hasLogin(cookie: String) = parseCookieString(cookie).let { "SAPISID" in it || "__Secure-3PAPISID" in it }
 

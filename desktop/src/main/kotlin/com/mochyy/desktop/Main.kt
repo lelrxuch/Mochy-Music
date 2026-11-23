@@ -54,10 +54,13 @@ import org.jetbrains.skia.Image
 import java.awt.Dimension
 
 fun main() {
+    if (SingleInstance.handOff()) return
+    SingleInstance.listen()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     val library = LibraryStore()
     // the sign-in goes first, so the first home feed is already the account's own
     val account = AccountStore()
+    account.keepFresh(scope)
     val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account))
     val icon = BitmapPainter(Image.makeFromEncoded(AppState::class.java.getResource("/icon.png")!!.readBytes()).toComposeImageBitmap())
     application {
@@ -69,6 +72,7 @@ fun main() {
             onKeyEvent = { shortcut(app, it) },
         ) {
             window.minimumSize = Dimension(760, 560)
+            SingleInstance.window = window
             window.background = java.awt.Color.BLACK
             MochyTheme {
                 CompositionLocalProvider(

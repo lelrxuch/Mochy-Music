@@ -93,7 +93,7 @@ fun <T> rememberLoad(key: Any, attempt: Int = 0, fetch: suspend () -> Result<T>)
     return produceState(cached ?: Load.Loading, key, attempt) {
         if (cached != null && attempt == 0) return@produceState
         value = Load.Loading
-        value = withContext(Dispatchers.IO) { fetch() }.fold(
+        value = withContext(Dispatchers.IO) { signedIn(fetch) }.fold(
             onSuccess = { pages[key] = it; Load.Ready(it) },
             onFailure = { Load.Failed(it.message) },
         )
