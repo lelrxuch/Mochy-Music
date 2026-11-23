@@ -21,6 +21,14 @@ import kotlin.test.Test
  * opening the app. Does nothing when MOCHY_SHOTS isn't set. Needs internet for real content.
  */
 class ScreensCheck {
+    private companion object {
+        // public music videos, only for their thumbnails
+        val SAMPLE_VIDEOS = listOf(
+            "FGBhQbmPwH8", "5NV6Rdv1a3I", "gAjR4_CbPpQ", "a5uQMwRMHcs", "K0HSD_i2DvA", "yydNF8tuVmU",
+            "IluRBvnYMoY", "h5EofwRzit0", "NF-kLy44Hls", "sFrNsSnk8GM", "LKYPYj2XX80", "dQw4w9WgXcQ",
+        )
+    }
+
     @Test
     fun screens() = runBlocking {
         val dir = System.getenv("MOCHY_SHOTS")?.let(::File) ?: return@runBlocking
@@ -62,8 +70,18 @@ class ScreensCheck {
             shot("5-player", 8)
             app.nav.playerOpen = false
         }
+        // a library with covers, so the glass has something to bend even where YouTube refuses CI
+        SAMPLE_VIDEOS.forEachIndexed { i, id ->
+            library.toggleLike(
+                SongItem(
+                    id = id, title = "Sample song ${i + 1}",
+                    artists = listOf(com.music.innertube.models.Artist(name = "Sample artist", id = null)),
+                    thumbnail = "https://i.ytimg.com/vi/$id/hqdefault.jpg",
+                ),
+            )
+        }
         app.nav.select(Tab.Library)
-        shot("6-library", 3)
+        shot("6-library", 6)
         app.nav.select(Tab.Settings)
         shot("7-settings", 3)
         app.player.close()
