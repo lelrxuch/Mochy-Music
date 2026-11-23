@@ -7,8 +7,9 @@ Port de escritorio basado en [Mochy Music](https://github.com/realidkroo/mochy-m
 ## Requisitos
 
 - `mpv`: `sudo dnf install mpv`
-- Opcional: `mpv-mpris` (controles multimedia de GNOME) y `yt-dlp` (respaldo para canciones que el
-  cliente principal rechaza).
+- Opcional: `yt-dlp` (respaldo para canciones que el cliente principal rechaza). `mpv-mpris` no hace
+  falta: Mochy publica sus propios controles multimedia (panel de GNOME, pantalla de bloqueo, teclas
+  multimedia) con `src/main/resources/mpris/mochy-mpris.py`, que usa el Python y GLib que trae Fedora.
 - Java 21 solo para compilar; la app instalada trae su propio Java.
 
 ## Usar

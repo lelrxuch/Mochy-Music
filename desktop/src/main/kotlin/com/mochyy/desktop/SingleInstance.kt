@@ -41,7 +41,7 @@ object SingleInstance {
         }, "single-instance").apply { isDaemon = true }.start()
     }
 
-    private fun raise() {
+    fun raise() {
         val frame = window as? Frame ?: return
         if (frame.extendedState and Frame.ICONIFIED != 0) frame.extendedState = frame.extendedState and Frame.ICONIFIED.inv()
         frame.isVisible = true

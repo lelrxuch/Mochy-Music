@@ -29,7 +29,8 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
         "mochy-mpv-${ProcessHandle.current().pid()}.sock",
     )
     private val process = ProcessBuilder(
-        listOf("mpv", "--idle=yes", "--no-video", "--no-terminal", "--input-ipc-server=${socket.path}") + extraArgs,
+        // --load-scripts=no keeps mpv-mpris (and any personal mpv script) out: Mochy has its own media controls
+        listOf("mpv", "--idle=yes", "--no-video", "--no-terminal", "--load-scripts=no", "--input-ipc-server=${socket.path}") + extraArgs,
     ).redirectOutput(ProcessBuilder.Redirect.DISCARD).redirectError(ProcessBuilder.Redirect.DISCARD).start()
     private val channel = connect()
 

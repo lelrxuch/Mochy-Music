@@ -62,10 +62,11 @@ fun main() {
     val account = AccountStore()
     account.keepFresh(scope)
     val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account))
+    val mpris = Mpris(scope, app.player)
     val icon = BitmapPainter(Image.makeFromEncoded(AppState::class.java.getResource("/icon.png")!!.readBytes()).toComposeImageBitmap())
     application {
         Window(
-            onCloseRequest = { app.player.close(); exitApplication() },
+            onCloseRequest = { mpris.close(); app.player.close(); exitApplication() },
             title = "Mochy",
             icon = icon,
             state = rememberWindowState(width = 1280.dp, height = 840.dp),
