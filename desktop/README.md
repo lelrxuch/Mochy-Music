@@ -38,7 +38,13 @@ la propia app):
 - Ajustes: calidad de audio, borrar historiales y créditos.
 - Clic derecho en canciones, atajos (Espacio, Esc, Alt+←, Ctrl+←/→) y botón "atrás" del ratón.
 
-Falta respecto a la app Android: inicio de sesión y sincronización con YouTube Music, importar de
+- Cuenta de YouTube Music (Ajustes): toma la sesión del navegador donde ya la iniciaste (Firefox, Zen,
+  LibreWolf, Floorp, Brave, Chrome, Chromium, Vivaldi, también en Flatpak; las de Chromium se descifran
+  con la clave del llavero de GNOME vía `secret-tool`) o una cookie pegada. Se guarda en
+  `~/.local/share/mochy-desktop/account.json` con permisos 600. Google no deja iniciar sesión dentro de
+  navegadores incrustados, por eso no hay ventana de login propia como la WebView de Android.
+
+Falta respecto a la app Android: sincronizar biblioteca y "me gusta" con YouTube Music, importar de
 Spotify/Apple Music, descargas, ecualizador y efectos, estilos alternativos del reproductor (iPod,
 tocadiscos), Discord, y los clientes de respaldo de `YTPlayerUtils` para canciones que el cliente
 principal rechaza.

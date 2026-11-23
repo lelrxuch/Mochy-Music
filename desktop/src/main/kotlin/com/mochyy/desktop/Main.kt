@@ -56,7 +56,9 @@ import java.awt.Dimension
 fun main() {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     val library = LibraryStore()
-    val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel())
+    // the sign-in goes first, so the first home feed is already the account's own
+    val account = AccountStore()
+    val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel(), account)
     val icon = BitmapPainter(Image.makeFromEncoded(AppState::class.java.getResource("/icon.png")!!.readBytes()).toComposeImageBitmap())
     application {
         Window(

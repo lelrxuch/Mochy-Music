@@ -24,6 +24,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.11.0")
     implementation(libs.coil)
     implementation(libs.coil.network.okhttp)
+    // reads the browsers' cookie databases for the YouTube Music sign-in
+    implementation("org.xerial:sqlite-jdbc:3.49.1.0")
 
     // what providers/innertube needs
     implementation(libs.ktor.client.core)

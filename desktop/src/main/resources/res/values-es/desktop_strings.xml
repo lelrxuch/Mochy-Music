@@ -26,4 +26,12 @@
     <string name="desktop_unlike">Quitar de Me gusta</string>
     <string name="desktop_artist">Artista</string>
     <string name="desktop_library">Biblioteca</string>
+    <string name="desktop_login_body">Inicia sesión en YouTube Music en tu navegador y Mochy usa esa sesión. Nunca ve tu contraseña.</string>
+    <string name="desktop_login_find">Buscar la sesión de mi navegador</string>
+    <string name="desktop_login_busy">Un momento…</string>
+    <string name="desktop_login_open_ytm">Abrir YouTube Music</string>
+    <string name="desktop_login_with">Usar %1$s</string>
+    <string name="desktop_login_none">No encontré una sesión de YouTube en Firefox, Brave, Chrome ni Chromium. Inicia sesión en music.youtube.com y vuelve a buscar, o pega la cookie.</string>
+    <string name="desktop_login_paste">O pega el encabezado Cookie de una petición a music.youtube.com (herramientas de desarrollador, pestaña Red)</string>
+    <string name="desktop_login_failed">Esa sesión no funcionó. Vuelve a iniciar sesión en el navegador e inténtalo otra vez.</string>
 </resources>

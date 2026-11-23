@@ -27,4 +27,12 @@
     <string name="desktop_unlike">Remove from liked</string>
     <string name="desktop_artist">Artist</string>
     <string name="desktop_library">Library</string>
+    <string name="desktop_login_body">Sign in to YouTube Music in your browser and Mochy picks up that session. It never sees your password.</string>
+    <string name="desktop_login_find">Find my browser session</string>
+    <string name="desktop_login_busy">Working…</string>
+    <string name="desktop_login_open_ytm">Open YouTube Music</string>
+    <string name="desktop_login_with">Use %1$s</string>
+    <string name="desktop_login_none">No YouTube sign-in found in Firefox, Brave, Chrome or Chromium. Sign in at music.youtube.com and look again, or paste the cookie.</string>
+    <string name="desktop_login_paste">Or paste the Cookie header of a request to music.youtube.com (developer tools, Network tab)</string>
+    <string name="desktop_login_failed">That session didn\'t work. Sign in again in the browser and retry.</string>
 </resources>
