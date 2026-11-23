@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- texts only the desktop app needs; everything else comes from the Android app's strings.xml -->
+<resources>
+    <string name="desktop_all">All</string>
+    <string name="desktop_album">Album</string>
+    <string name="desktop_playlist">Playlist</string>
+    <string name="desktop_song_count">%1$d songs</string>
+    <string name="desktop_up_next">Up next</string>
+    <string name="desktop_queue_empty">Nothing queued</string>
+    <string name="desktop_recent_searches">Recent searches</string>
+    <string name="desktop_recently_played">Recently played</string>
+    <string name="desktop_saved">Saved</string>
+    <string name="desktop_view">View</string>
+    <string name="desktop_more">More</string>
+    <string name="desktop_go_back">Back</string>
+    <string name="desktop_close_player">Close player</string>
+    <string name="desktop_mpv_missing">mpv is needed to play music. Install it with: sudo dnf install mpv</string>
+    <string name="desktop_cant_play">This song couldn\'t be played</string>
+    <string name="desktop_cant_load">Couldn\'t load this page</string>
+    <string name="desktop_loading_lyrics">Looking for lyrics…</string>
+    <string name="desktop_library_empty">Songs you like and play show up here</string>
+    <string name="desktop_about_title">About Mochy for Linux</string>
+    <string name="desktop_about_body">A desktop port of Mochy Music, the free and open source player by realidkroo. Mochy itself grew out of ViviMusic, which is built on Metrolist. Licensed under GPL-3.0.</string>
+    <string name="desktop_open_github">Open Mochy on GitHub</string>
+    <string name="desktop_quality_body">High plays the best stream YouTube offers, low saves data</string>
+    <string name="desktop_done">Done</string>
+    <string name="desktop_unlike">Remove from liked</string>
+    <string name="desktop_artist">Artist</string>
+    <string name="desktop_library">Library</string>
+</resources>

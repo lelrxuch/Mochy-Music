@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="desktop_all">Todo</string>
+    <string name="desktop_album">Álbum</string>
+    <string name="desktop_playlist">Playlist</string>
+    <string name="desktop_song_count">%1$d canciones</string>
+    <string name="desktop_up_next">A continuación</string>
+    <string name="desktop_queue_empty">No hay nada en la cola</string>
+    <string name="desktop_recent_searches">Búsquedas recientes</string>
+    <string name="desktop_recently_played">Escuchado recientemente</string>
+    <string name="desktop_saved">Guardado</string>
+    <string name="desktop_view">Ver</string>
+    <string name="desktop_more">Más</string>
+    <string name="desktop_go_back">Atrás</string>
+    <string name="desktop_close_player">Cerrar reproductor</string>
+    <string name="desktop_mpv_missing">Falta mpv para reproducir. Instálalo con: sudo dnf install mpv</string>
+    <string name="desktop_cant_play">No se pudo reproducir esta canción</string>
+    <string name="desktop_cant_load">No se pudo cargar esta página</string>
+    <string name="desktop_loading_lyrics">Buscando la letra…</string>
+    <string name="desktop_library_empty">Aquí aparecen las canciones que te gustan y las que escuchas</string>
+    <string name="desktop_about_title">Acerca de Mochy para Linux</string>
+    <string name="desktop_about_body">Port de escritorio de Mochy Music, el reproductor libre y de código abierto de realidkroo. Mochy nació de ViviMusic, que a su vez se basa en Metrolist. Licencia GPL-3.0.</string>
+    <string name="desktop_open_github">Abrir Mochy en GitHub</string>
+    <string name="desktop_quality_body">Alta usa el mejor audio que da YouTube, baja ahorra datos</string>
+    <string name="desktop_done">Listo</string>
+    <string name="desktop_unlike">Quitar de Me gusta</string>
+    <string name="desktop_artist">Artista</string>
+    <string name="desktop_library">Biblioteca</string>
+</resources>
