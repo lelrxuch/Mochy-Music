@@ -16,7 +16,8 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.lerp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -24,6 +25,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.Image
+import org.jetbrains.skia.Paint
+import org.jetbrains.skia.Rect
 import org.jetbrains.skia.RuntimeEffect
 import org.jetbrains.skia.RuntimeShaderBuilder
 import java.net.URI
@@ -170,7 +173,8 @@ fun AmbientBackdrop(colors: AmbientColors, modifier: Modifier = Modifier) {
                 builder.uniform("resolution", size.width, size.height)
                 builder.uniform("time", time)
                 builder.uniform("grid", values)
-                drawRect(ShaderBrush(builder.makeShader()))
+                val paint = Paint().apply { shader = builder.makeShader() }
+                drawIntoCanvas { it.nativeCanvas.drawRect(Rect.makeWH(size.width, size.height), paint) }
             }
         },
     )
