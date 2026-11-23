@@ -82,6 +82,13 @@ class ScreensCheck {
         }
         app.nav.select(Tab.Library)
         shot("6-library", 6)
+        // the player with a sample song: its stream won't load on CI, but the page and its backdrop do
+        library.data.liked.firstOrNull()?.let { song ->
+            app.player.playSong(song)
+            app.nav.playerOpen = true
+            shot("5b-player-sample", 6)
+            app.nav.playerOpen = false
+        }
         app.nav.select(Tab.Settings)
         shot("7-settings", 3)
         app.player.close()
