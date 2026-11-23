@@ -1,6 +1,20 @@
 package com.mochyy.desktop
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -123,7 +137,7 @@ private fun CoverAndControls(panel: Panel?, onPanel: (Panel) -> Unit) {
     BoxWithConstraints(contentAlignment = Alignment.Center) {
         val cover = min(min(maxWidth * 0.85f, maxHeight - 340.dp), 520.dp).coerceAtLeast(160.dp)
         Column(Modifier.width(cover)) {
-            Artwork(song.thumbnail, Modifier.size(cover).shadow(24.dp, RoundedCornerShape(24.dp)), RoundedCornerShape(24.dp), size = 1200)
+            Artwork(song.thumbnail, Modifier.sharedPlayerElement("cover").size(cover).shadow(24.dp, RoundedCornerShape(24.dp)), RoundedCornerShape(24.dp), size = 1200)
             Spacer(Modifier.height(24.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -138,11 +152,7 @@ private fun CoverAndControls(panel: Panel?, onPanel: (Panel) -> Unit) {
                     )
                 }
                 formatBadge(codec, rate)?.let { Badge(it); Spacer(Modifier.width(10.dp)) }
-                val liked = app.library.isLiked(song.id)
-                IconAction(
-                    drawable(if (liked) "ic_heart" else "ic_heart_outline"), str("like"), { app.library.toggleLike(song) },
-                    background = Color.White.copy(alpha = 0.12f), iconSize = 20.dp,
-                )
+                LikeButton(app.library.isLiked(song.id)) { app.library.toggleLike(song) }
             }
             Spacer(Modifier.height(16.dp))
             val shown = scrub ?: if (duration > 0) (position / duration).toFloat() else 0f
@@ -193,6 +203,50 @@ private fun CoverAndControls(panel: Panel?, onPanel: (Panel) -> Unit) {
     }
 }
 
+/** the heart: it springs up when liked and throws a ring of sparks (a compact LikeBurst.kt) */
+@Composable
+private fun LikeButton(liked: Boolean, onClick: () -> Unit) {
+    val pop = remember { Animatable(1f) }
+    val burst = remember { Animatable(1f) }
+    var before by remember { mutableStateOf(liked) }
+    LaunchedEffect(liked) {
+        if (liked && !before) {
+            launch {
+                pop.snapTo(0.6f)
+                pop.animateTo(1f, spring(dampingRatio = 0.35f, stiffness = 500f))
+            }
+            launch {
+                burst.snapTo(0f)
+                burst.animateTo(1f, tween(520, easing = FastOutSlowInEasing))
+            }
+        }
+        before = liked
+    }
+    Box(
+        Modifier.drawBehind {
+            val p = burst.value
+            if (p >= 1f) return@drawBehind
+            val reach = size.minDimension / 2 * (0.7f + 0.9f * p)
+            repeat(8) { k ->
+                val angle = k / 8f * 2f * PI.toFloat() - PI.toFloat() / 2f
+                drawCircle(
+                    Color.White.copy(alpha = 1f - p), radius = 3.dp.toPx() * (1f - p * 0.5f),
+                    center = center + Offset(cos(angle) * reach, sin(angle) * reach),
+                )
+            }
+            drawCircle(Color.White.copy(alpha = 0.35f * (1f - p)), radius = reach, style = Stroke(2.dp.toPx() * (1f - p)))
+        },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.graphicsLayer { scaleX = pop.value; scaleY = pop.value }) {
+            IconAction(
+                drawable(if (liked) "ic_heart" else "ic_heart_outline"), str("like"), onClick,
+                background = Color.White.copy(alpha = 0.12f), iconSize = 20.dp,
+            )
+        }
+    }
+}
+
 /** the lyrics and queue buttons in the player's corner, lit while their panel shows */
 @Composable
 private fun PanelToggles(panel: Panel?, onPanel: (Panel) -> Unit) {
@@ -234,12 +288,25 @@ private fun SyncedLyrics(lines: List<LyricLine>) {
             contentPadding = PaddingValues(top = maxHeight / 3, bottom = maxHeight * 2 / 3),
         ) {
             itemsIndexed(lines) { i, line ->
-                val color by animateColorAsState(if (i == current) Color.White else Color.White.copy(alpha = 0.3f))
+                // the sung line lights first and the lines around it follow a beat later, a ripple out from it
+                val distance = if (current < 0) 6 else minOf(abs(i - current), 6)
+                val stagger = tween<Float>(460, delayMillis = distance * 35, easing = FastOutSlowInEasing)
+                val lit by animateFloatAsState(if (i == current) 1f else 0f, stagger)
+                val near by animateFloatAsState(1f - distance / 6f, stagger)
                 Text(
                     line.text.ifBlank { "♪" },
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { player.seek(line.timeMs / 1000.0) }
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    color = color,
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .graphicsLayer {
+                            val scale = 0.95f + 0.05f * lit
+                            scaleX = scale
+                            scaleY = scale
+                            transformOrigin = TransformOrigin(0f, 0.5f)
+                        }
+                        // lines far from the sung one go a little soft, so the eye stays on it
+                        .blur((2.5f * (1f - near)).dp),
+                    color = Color.White.copy(alpha = 0.28f + 0.72f * lit),
+                    style = MaterialTheme.typography.bodyLarge.copy(shadow = Shadow(Color.White.copy(alpha = 0.5f * lit), blurRadius = 26f * lit)),
                     fontSize = 30.sp,
                     lineHeight = 36.sp,
                     fontWeight = FontWeight.Bold,

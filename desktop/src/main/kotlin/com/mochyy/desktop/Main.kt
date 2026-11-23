@@ -3,6 +3,8 @@
 package com.mochyy.desktop
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
@@ -116,7 +118,7 @@ private fun shortcut(app: AppState, event: KeyEvent): Boolean {
 @Composable
 internal fun ShellForTest() = Shell()
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Shell() {
     val app = LocalApp.current
@@ -125,7 +127,7 @@ private fun Shell() {
     // each page keeps its scroll position while another is on top of it
     val pages = rememberSaveableStateHolder()
     val backdrop = remember { GlassBackdrop() }
-    CompositionLocalProvider(LocalGlass provides backdrop) { Box(
+    SharedTransitionLayout { CompositionLocalProvider(LocalGlass provides backdrop, LocalSharedScope provides this) { Box(
         Modifier.fillMaxSize().background(Color.Black)
             .onPointerEvent(PointerEventType.Press) { if (it.button == PointerButton.Back) nav.back() },
     ) {
@@ -166,7 +168,12 @@ private fun Shell() {
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            MiniPlayer(player, onOpen = { nav.playerOpen = true }, Modifier.fillMaxWidth())
+            // hidden while the player is open, so its cover can fly up into the player's and back
+            AnimatedVisibility(!nav.playerOpen, enter = fadeIn(tween(220)), exit = fadeOut(tween(120))) {
+                CompositionLocalProvider(LocalVisibilityScope provides this) {
+                    MiniPlayer(player, onOpen = { nav.playerOpen = true }, Modifier.fillMaxWidth())
+                }
+            }
             NavBar(nav.tab, nav::select, Modifier.fillMaxWidth())
         }
 
@@ -180,7 +187,7 @@ private fun Shell() {
                 scaleOut(spring(dampingRatio = 1f, stiffness = 420f), targetScale = 0.9f, transformOrigin = TransformOrigin(0.5f, 1f)) +
                 fadeOut(tween(160)),
         ) {
-            NowPlaying(onClose = { nav.playerOpen = false })
+            CompositionLocalProvider(LocalVisibilityScope provides this) { NowPlaying(onClose = { nav.playerOpen = false }) }
         }
-    } }
+    } } }
 }

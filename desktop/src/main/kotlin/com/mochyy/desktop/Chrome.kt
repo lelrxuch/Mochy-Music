@@ -139,7 +139,7 @@ fun MiniPlayer(player: Player, onOpen: () -> Unit, modifier: Modifier = Modifier
         modifier.height(ChromeHeight).chromeGlass().clickable(onClick = onOpen).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Artwork(song.thumbnail, Modifier.size(48.dp), RoundedCornerShape(12.dp), size = 120)
+        Artwork(song.thumbnail, Modifier.sharedPlayerElement("cover").size(48.dp), RoundedCornerShape(12.dp), size = 120)
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text(song.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             val subtitle = listOfNotNull(song.artistNames(), song.album?.name).filter { it.isNotBlank() }.joinToString(" — ")
