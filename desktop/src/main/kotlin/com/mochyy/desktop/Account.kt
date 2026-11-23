@@ -174,9 +174,24 @@ fun cleanCookie(raw: String): String =
  * session again and tries once more.
  */
 suspend fun <T> signedIn(fetch: suspend () -> Result<T>): Result<T> {
+    ensureVisitorData()
     val first = fetch()
     val unauthorized = first.exceptionOrNull()?.message.orEmpty().contains("invalid: 401")
     return if (unauthorized && AccountStore.current?.refresh() == true) fetch() else first
+}
+
+private val visitorLock = Mutex()
+
+/**
+ * YouTube Music turns requests without a visitor id away (400, "invalid argument"), most of all from
+ * a new network. The Android app asks for one at start (App.kt); this asks once, on first use, when
+ * there isn't one from the account.
+ */
+suspend fun ensureVisitorData() {
+    if (YouTube.visitorData != null) return
+    visitorLock.withLock {
+        if (YouTube.visitorData == null) YouTube.visitorData().getOrNull()?.let { YouTube.visitorData = it }
+    }
 }
 
 private fun sapisid(cookie: String) = parseCookieString(cookie).let { it["SAPISID"] ?: it["__Secure-3PAPISID"] }

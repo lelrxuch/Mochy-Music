@@ -46,6 +46,7 @@ class ScreensCheck {
             scene.close()
         }
 
+        ensureVisitorData()
         shot("1-home", 10)
         app.search.query = "daft punk"
         app.search.submitted = "daft punk"

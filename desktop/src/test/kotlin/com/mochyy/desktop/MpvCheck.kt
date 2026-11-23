@@ -13,6 +13,8 @@ import kotlin.test.assertTrue
 class MpvCheck {
     @Test
     fun mpvPlaysPausesSeeksAndFinishesASong() = runBlocking {
+        // GitHub's servers are a data centre, where YouTube refuses streams; this runs on a real PC
+        if (System.getenv("CI") != null) return@runBlocking println("skipped on CI")
         if (runCatching { ProcessBuilder("mpv", "--version").start().waitFor() }.isFailure) return@runBlocking
         val ends = mutableListOf<String>()
         Mpv(listOf("--ao=null")) { synchronized(ends) { ends += it } }.use { mpv ->
