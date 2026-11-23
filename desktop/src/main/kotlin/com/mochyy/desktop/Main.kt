@@ -4,7 +4,12 @@ package com.mochyy.desktop
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.DarkDefaultContextMenuRepresentation
@@ -32,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.key.Key
@@ -44,6 +50,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -125,7 +132,8 @@ private fun Shell() {
         val route = nav.top
         // the pages are what the floating glass shows, bent and blurred
         Box(Modifier.fillMaxSize().background(Color.Black).glassSource(backdrop)) { pages.SaveableStateProvider(route?.toString() ?: nav.tab.name) {
-            when (route) {
+            // each page keeps its own record of what already played its entrance
+            CompositionLocalProvider(LocalReveal provides rememberRevealSeenState()) { when (route) {
                 null -> when (nav.tab) {
                     Tab.Home -> HomeScreen()
                     Tab.Search -> SearchScreen()
@@ -135,7 +143,7 @@ private fun Shell() {
                 is Route.Artist -> ArtistScreen(route.id)
                 is Route.Album -> AlbumScreen(route.id)
                 is Route.Playlist -> PlaylistScreen(route.id)
-            }
+            } }
         } }
         if (route != null) {
             Box(Modifier.padding(16.dp).liquidGlass(CircleShape, elevation = 6.dp)) {
@@ -162,10 +170,15 @@ private fun Shell() {
             NavBar(nav.tab, nav::select, Modifier.fillMaxWidth())
         }
 
+        // the player grows up out of the mini player on a spring, and sinks back into it
         AnimatedVisibility(
             nav.playerOpen && player.current != null,
-            enter = slideInVertically { it } + fadeIn(),
-            exit = slideOutVertically { it } + fadeOut(),
+            enter = slideInVertically(spring(dampingRatio = 0.86f, stiffness = 320f, visibilityThreshold = IntOffset.VisibilityThreshold)) { it / 3 } +
+                scaleIn(spring(dampingRatio = 0.86f, stiffness = 320f), initialScale = 0.9f, transformOrigin = TransformOrigin(0.5f, 1f)) +
+                fadeIn(tween(180)),
+            exit = slideOutVertically(spring(dampingRatio = 1f, stiffness = 420f, visibilityThreshold = IntOffset.VisibilityThreshold)) { it / 3 } +
+                scaleOut(spring(dampingRatio = 1f, stiffness = 420f), targetScale = 0.9f, transformOrigin = TransformOrigin(0.5f, 1f)) +
+                fadeOut(tween(160)),
         ) {
             NowPlaying(onClose = { nav.playerOpen = false })
         }

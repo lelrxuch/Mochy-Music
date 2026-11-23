@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,10 +45,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -63,6 +66,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.floor
 
 // ---- the frosted chrome of the nav bar and mini player (ui/component/FrostedGlass.kt, GlassKit.kt) ----
 
@@ -85,24 +90,39 @@ enum class Tab(val titleKey: String, val unlit: @Composable () -> Painter, val l
 
 @Composable
 fun NavBar(selected: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier.height(ChromeHeight).chromeGlass().padding(horizontal = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Tab.entries.forEach { tab ->
-            val lit by animateFloatAsState(if (tab == selected) 1f else 0f, tween(200))
+    // where the lit pill is, in tabs: it slides between them on a spring instead of jumping
+    val position by animateFloatAsState(Tab.entries.indexOf(selected).toFloat(), spring(dampingRatio = 0.72f, stiffness = 380f))
+    Box(modifier.height(ChromeHeight).chromeGlass().padding(horizontal = 6.dp)) {
+        Spacer(
+            Modifier.fillMaxSize().padding(vertical = 8.dp).drawBehind {
+                val slot = size.width / Tab.entries.size
+                val inset = 2.dp.toPx()
+                // halfway between two tabs the pill stretches, like a drop being pulled, then settles
+                val travel = 1f - abs((position - floor(position)) * 2f - 1f)
+                val width = (slot - 2 * inset) * (1f + 0.3f * travel)
+                val left = slot * position + slot / 2 - width / 2
+                val radius = CornerRadius(size.height / 2)
+                drawRoundRect(Color.White.copy(alpha = 0.1f), Offset(left, 0f), Size(width, size.height), radius)
+                drawRoundRect(
+                    Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.16f), Color.White.copy(alpha = 0.02f))),
+                    Offset(left, 0f), Size(width, size.height), radius, style = Stroke(1.dp.toPx()),
+                )
+            },
+        )
+        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) { Tab.entries.forEachIndexed { i, tab ->
+            val lit = (1f - abs(position - i)).coerceIn(0f, 1f)
             Box(
                 Modifier.weight(1f).fillMaxHeight().padding(vertical = 8.dp, horizontal = 2.dp)
                     .clip(CircleShape)
-                    .background(ChromeHighlightColor.copy(alpha = 0.1f * lit))
-                    .clickable { onSelect(tab) },
+                    .clickable { onSelect(tab) }
+                    .press3D(maxTilt = 0f, pressedScale = 0.9f),
                 contentAlignment = Alignment.Center,
             ) {
                 // the outline fades out as the filled icon fades in, like the app's tabs
                 Icon(tab.unlit(), str(tab.titleKey), Modifier.size(tab.iconSize).alpha(0.7f * (1f - lit)), tint = Color.White)
                 Icon(tab.lit(), null, Modifier.size(tab.iconSize).alpha(lit), tint = Color.White)
             }
-        }
+        } }
     }
 }
 
@@ -138,7 +158,7 @@ fun MiniPlayer(player: Player, onOpen: () -> Unit, modifier: Modifier = Modifier
 @Composable
 fun RoundButton(onClick: () -> Unit, size: Dp, modifier: Modifier = Modifier, background: Color = Color.Transparent, content: @Composable () -> Unit) {
     Box(
-        modifier.size(size).clip(CircleShape).background(background).clickable(onClick = onClick),
+        modifier.press3D(maxTilt = 0f, pressedScale = 0.88f).size(size).clip(CircleShape).background(background).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { content() }
 }
@@ -154,7 +174,7 @@ fun IconAction(icon: Painter, label: String?, onClick: () -> Unit, size: Dp = 40
 fun PillButton(text: String, onClick: () -> Unit, icon: Painter? = null, light: Boolean = true, modifier: Modifier = Modifier) {
     val content = if (light) Color.Black else Color.White
     Row(
-        modifier.height(40.dp).clip(CircleShape)
+        modifier.press3D(maxTilt = 4f, pressedScale = 0.95f).height(40.dp).clip(CircleShape)
             .background(if (light) Color.White.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.12f))
             .clickable(onClick = onClick).padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically,

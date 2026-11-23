@@ -64,9 +64,9 @@ fun NowPlaying(onClose: () -> Unit) {
             // clicks on the player stay on the player instead of reaching the page under it
             .clickable(remember { MutableInteractionSource() }, indication = null) {},
     ) {
-        // the cover, blurred and dimmed, as the whole background
-        Artwork(song.thumbnail, Modifier.fillMaxSize().blur(90.dp).alpha(0.6f), RectangleShape, size = 600)
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.3f), 1f to Color.Black.copy(alpha = 0.85f))))
+        // the cover's colours drifting under everything (the flagship's AmbientBackdrop), darkened toward the bottom for the controls
+        AmbientBackdrop(rememberAmbientColors(song.thumbnail), Modifier.fillMaxSize())
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.15f), 1f to Color.Black.copy(alpha = 0.6f))))
 
         Column(Modifier.fillMaxSize().padding(24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

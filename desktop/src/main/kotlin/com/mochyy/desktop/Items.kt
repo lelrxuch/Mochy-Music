@@ -107,7 +107,7 @@ fun SongRow(
     val playing = app.player.current?.id == song.id
     ContextMenuArea(items = { songActions(app, song).map { (label, action) -> ContextMenuItem(label, action) } }) {
         Row(
-            modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick)
+            modifier.revealOnAppear("song:${song.id}").fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick)
                 .background(if (playing) Color.White.copy(alpha = 0.08f) else Color.Transparent)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -151,7 +151,7 @@ fun ItemCard(item: YTItem, width: Dp = 168.dp) {
     val menu = if (item is SongItem) songActions(app, item) else emptyList()
     ContextMenuArea(items = { menu.map { (label, action) -> ContextMenuItem(label, action) } }) {
         Column(
-            Modifier.width(width).clip(RoundedCornerShape(16.dp)).clickable { app.open(item) }.padding(6.dp),
+            Modifier.revealOnAppear("card:${item.id}").press3D().width(width).clip(RoundedCornerShape(16.dp)).clickable { app.open(item) }.padding(6.dp),
             horizontalAlignment = if (round) Alignment.CenterHorizontally else Alignment.Start,
         ) {
             Artwork(item.thumbnail, Modifier.size(width - 12.dp), if (round) CircleShape else RoundedCornerShape(16.dp), size = 400)
@@ -168,7 +168,7 @@ fun ItemRow(item: YTItem) {
     val app = LocalApp.current
     if (item is SongItem) return SongRow(item, onClick = { app.player.playSong(item) })
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { app.open(item) }.padding(horizontal = 12.dp, vertical = 8.dp),
+        Modifier.revealOnAppear("row:${item.id}").fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { app.open(item) }.padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Artwork(item.thumbnail, Modifier.size(56.dp), if (item is ArtistItem) CircleShape else RoundedCornerShape(12.dp), size = 160)
