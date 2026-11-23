@@ -19,12 +19,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -115,12 +117,14 @@ private fun Shell() {
     val player = app.player
     // each page keeps its scroll position while another is on top of it
     val pages = rememberSaveableStateHolder()
-    Box(
+    val backdrop = remember { GlassBackdrop() }
+    CompositionLocalProvider(LocalGlass provides backdrop) { Box(
         Modifier.fillMaxSize().background(Color.Black)
             .onPointerEvent(PointerEventType.Press) { if (it.button == PointerButton.Back) nav.back() },
     ) {
         val route = nav.top
-        pages.SaveableStateProvider(route?.toString() ?: nav.tab.name) {
+        // the pages are what the floating glass shows, bent and blurred
+        Box(Modifier.fillMaxSize().background(Color.Black).glassSource(backdrop)) { pages.SaveableStateProvider(route?.toString() ?: nav.tab.name) {
             when (route) {
                 null -> when (nav.tab) {
                     Tab.Home -> HomeScreen()
@@ -132,10 +136,10 @@ private fun Shell() {
                 is Route.Album -> AlbumScreen(route.id)
                 is Route.Playlist -> PlaylistScreen(route.id)
             }
-        }
+        } }
         if (route != null) {
-            Box(Modifier.padding(16.dp)) {
-                IconAction(drawable("arrow_back"), str("desktop_go_back"), { nav.back() }, size = 44.dp, background = Color.Black.copy(alpha = 0.55f))
+            Box(Modifier.padding(16.dp).liquidGlass(CircleShape, elevation = 6.dp)) {
+                IconAction(drawable("arrow_back"), str("desktop_go_back"), { nav.back() }, size = 44.dp)
             }
         }
 
@@ -165,5 +169,5 @@ private fun Shell() {
         ) {
             NowPlaying(onClose = { nav.playerOpen = false })
         }
-    }
+    } }
 }

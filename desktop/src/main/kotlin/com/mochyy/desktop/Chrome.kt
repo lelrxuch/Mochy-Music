@@ -66,16 +66,10 @@ import kotlinx.coroutines.launch
 
 // ---- the frosted chrome of the nav bar and mini player (ui/component/FrostedGlass.kt, GlassKit.kt) ----
 
-private val GlassChromeColor = Color(0xFF131313)
-private val ChromeOutlineColor = Color.White.copy(alpha = 0.05f)
 val ChromeHighlightColor = Color.White.copy(alpha = 0.1f)
 
-/** the app blurs what's behind the bars; Compose on desktop can't read the backdrop, so the tint is a little thicker instead */
-fun Modifier.chromeGlass(shape: Shape = CircleShape) = this
-    .shadow(12.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-    .clip(shape)
-    .background(GlassChromeColor.copy(alpha = 0.92f))
-    .border(1.dp, ChromeOutlineColor, shape)
+/** the floating bars' glass (Glass.kt), clipped so what's inside stays in the shape */
+fun Modifier.chromeGlass(shape: Shape = CircleShape) = this.liquidGlass(shape).clip(shape)
 
 /** the bar and the mini player are this tall (NavBarHeight in AppNavigation.kt) */
 val ChromeHeight = 64.dp
