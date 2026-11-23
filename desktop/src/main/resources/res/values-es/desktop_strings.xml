@@ -34,4 +34,6 @@
     <string name="desktop_login_none">No encontré una sesión de YouTube en Firefox, Brave, Chrome ni Chromium. Inicia sesión en music.youtube.com y vuelve a buscar, o pega la cookie.</string>
     <string name="desktop_login_paste">O pega el encabezado Cookie de una petición a music.youtube.com (herramientas de desarrollador, pestaña Red)</string>
     <string name="desktop_login_failed">Esa sesión no funcionó. Vuelve a iniciar sesión en el navegador e inténtalo otra vez.</string>
+    <string name="desktop_sync">Sincronizar con YouTube Music</string>
+    <string name="desktop_syncing">Sincronizando…</string>
 </resources>

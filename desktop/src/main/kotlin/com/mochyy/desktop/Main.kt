@@ -58,7 +58,7 @@ fun main() {
     val library = LibraryStore()
     // the sign-in goes first, so the first home feed is already the account's own
     val account = AccountStore()
-    val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel(), account)
+    val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account))
     val icon = BitmapPainter(Image.makeFromEncoded(AppState::class.java.getResource("/icon.png")!!.readBytes()).toComposeImageBitmap())
     application {
         Window(

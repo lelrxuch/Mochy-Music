@@ -24,7 +24,18 @@ data class LibraryData(
     val searches: List<String> = emptyList(),
     val volume: Double = 100.0,
     val highQuality: Boolean = true,
+    val pending: List<PendingChange> = emptyList(),
 )
+
+/** a save made here that YouTube Music hasn't taken yet; [target] is the id its API wants, [id] the item's own */
+@Serializable
+data class PendingChange(val id: String, val kind: String, val target: String, val on: Boolean) {
+    companion object {
+        const val SONG = "song"
+        const val COLLECTION = "collection"
+        const val ARTIST = "artist"
+    }
+}
 
 /**
  * What the Android app keeps in its database, kept here in one JSON file:
@@ -35,10 +46,15 @@ class LibraryStore(private val file: File = defaultFile()) {
     var data by mutableStateOf(load())
         private set
 
+    /** told about every heart and save the person taps, with the new state; the sync sends them to YouTube Music */
+    var onChange: ((YTItem, Boolean) -> Unit)? = null
+
     fun isLiked(id: String) = data.liked.any { it.id == id }
 
-    fun toggleLike(song: SongItem) = update {
-        copy(liked = if (isLiked(song.id)) liked.filterNot { it.id == song.id } else listOf(song) + liked)
+    fun toggleLike(song: SongItem) {
+        val liked = !isLiked(song.id)
+        update { copy(liked = if (liked) listOf(song) + this.liked else this.liked.filterNot { it.id == song.id }) }
+        onChange?.invoke(song, liked)
     }
 
     fun addHistory(song: SongItem) = update {
@@ -60,15 +76,30 @@ class LibraryStore(private val file: File = defaultFile()) {
         is SongItem -> isLiked(item.id)
     }
 
-    fun toggleSaved(item: YTItem) = update {
+    fun toggleSaved(item: YTItem) {
         val saved = isSaved(item)
-        when (item) {
-            is AlbumItem -> copy(albums = if (saved) albums.filterNot { it.id == item.id } else listOf(item) + albums)
-            is ArtistItem -> copy(artists = if (saved) artists.filterNot { it.id == item.id } else listOf(item) + artists)
-            is PlaylistItem -> copy(playlists = if (saved) playlists.filterNot { it.id == item.id } else listOf(item) + playlists)
-            is SongItem -> copy(liked = if (saved) liked.filterNot { it.id == item.id } else listOf(item) + liked)
-        }
+        update { savedToggled(item, saved) }
+        onChange?.invoke(item, !saved)
     }
+
+    private fun LibraryData.savedToggled(item: YTItem, saved: Boolean) = when (item) {
+        is AlbumItem -> copy(albums = if (saved) albums.filterNot { it.id == item.id } else listOf(item) + albums)
+        is ArtistItem -> copy(artists = if (saved) artists.filterNot { it.id == item.id } else listOf(item) + artists)
+        is PlaylistItem -> copy(playlists = if (saved) playlists.filterNot { it.id == item.id } else listOf(item) + playlists)
+        is SongItem -> copy(liked = if (saved) liked.filterNot { it.id == item.id } else listOf(item) + liked)
+    }
+
+    /** the shelves as YouTube Music has them; a null shelf didn't load and stays as it was */
+    fun replaceSaved(liked: List<SongItem>?, albums: List<AlbumItem>?, artists: List<ArtistItem>?, playlists: List<PlaylistItem>?) = update {
+        copy(
+            liked = liked ?: this.liked,
+            albums = albums ?: this.albums,
+            artists = artists ?: this.artists,
+            playlists = playlists ?: this.playlists,
+        )
+    }
+
+    fun setPending(pending: List<PendingChange>) = update { copy(pending = pending.distinctBy { it.id }) }
 
     fun setVolume(volume: Double) = update { copy(volume = volume) }
 

@@ -35,4 +35,6 @@
     <string name="desktop_login_none">No YouTube sign-in found in Firefox, Brave, Chrome or Chromium. Sign in at music.youtube.com and look again, or paste the cookie.</string>
     <string name="desktop_login_paste">Or paste the Cookie header of a request to music.youtube.com (developer tools, Network tab)</string>
     <string name="desktop_login_failed">That session didn\'t work. Sign in again in the browser and retry.</string>
+    <string name="desktop_sync">Sync with YouTube Music</string>
+    <string name="desktop_syncing">Syncing…</string>
 </resources>

@@ -57,7 +57,8 @@ class AppState(
     val library: LibraryStore,
     val home: HomeModel,
     val search: SearchModel,
-    val account: AccountStore = AccountStore(),
+    val account: AccountStore,
+    val sync: LibrarySync,
 ) {
     /** what a click on any item does: songs play, the rest open their page */
     fun open(item: YTItem) {

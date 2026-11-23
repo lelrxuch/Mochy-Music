@@ -267,6 +267,11 @@ fun LibraryScreen() {
     Column {
         PageTitle(str("desktop_library"))
         ChoiceChips(Shelf.entries, shelf, { str(it.labelKey) }) { shelf = it }
+        if (app.account.session != null) {
+            Row(Modifier.padding(horizontal = 24.dp, vertical = 4.dp)) {
+                PillButton(str(if (app.sync.syncing) "desktop_syncing" else "desktop_sync"), { app.sync.pull() }, drawable("sync"), light = false)
+            }
+        }
         Spacer(Modifier.height(8.dp))
         ScrollPage(list) {
             LazyColumn(state = list, contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = ChromeClearance)) {
@@ -365,6 +370,7 @@ private fun AccountCard() {
                     found = null
                     pasted = ""
                     app.home.refresh()
+                    app.sync.pull(adopt = true)
                 }
                 .onFailure { failed = true }
             busy = false
