@@ -1,13 +1,14 @@
 package com.mochyy.desktop
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -280,33 +281,52 @@ private fun SyncedLyrics(lines: List<LyricLine>) {
     // a hair early, so the line lights as it's sung rather than just after
     val current = lines.indexAt((position * 1000).toLong() + 200)
     val list = rememberLazyListState()
+    val stagger = remember(lines) { LyricsStagger(lines.size + 1) }
+    LaunchedEffect(stagger) { stagger.run() }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        LaunchedEffect(current) { if (current >= 0) list.animateScrollToItem(current) }
+        LaunchedEffect(current) {
+            if (current < 0) return@LaunchedEffect
+            val item = list.layoutInfo.visibleItemsInfo.firstOrNull { it.index == current }
+            // far off screen (a seek): just go there
+            if (item == null) return@LaunchedEffect list.animateScrollToItem(current)
+            stagger.anchorRow = current
+            list.scroll {
+                var previous = 0f
+                animate(0f, item.offset.toFloat(), animationSpec = tween(620, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))) { value, _ ->
+                    val consumed = scrollBy(value - previous)
+                    previous += consumed
+                    // rows below the sung line hold back by what just scrolled, then catch up on their own
+                    if (consumed != 0f) {
+                        for (info in list.layoutInfo.visibleItemsInfo) if (info.index > current) stagger.holdBack(info.index, consumed)
+                    }
+                }
+            }
+        }
         LazyColumn(
             state = list,
             // the sung line sits a third of the way down, with room to scroll past the last one
             contentPadding = PaddingValues(top = maxHeight / 3, bottom = maxHeight * 2 / 3),
         ) {
             itemsIndexed(lines) { i, line ->
-                // the sung line lights first and the lines around it follow a beat later, a ripple out from it
                 val distance = if (current < 0) 6 else minOf(abs(i - current), 6)
-                val stagger = tween<Float>(460, delayMillis = distance * 35, easing = FastOutSlowInEasing)
-                val lit by animateFloatAsState(if (i == current) 1f else 0f, stagger)
-                val near by animateFloatAsState(1f - distance / 6f, stagger)
+                val lit by animateFloatAsState(if (i == current) 1f else 0f, tween(500, easing = FastOutSlowInEasing))
+                // the sung line and its neighbours stay sharp, the rest soften a little
+                val soft by animateFloatAsState(((distance - 1).coerceAtLeast(0) / 5f), tween(400))
                 Text(
                     line.text.ifBlank { "♪" },
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { player.seek(line.timeMs / 1000.0) }
                         .padding(horizontal = 12.dp, vertical = 10.dp)
                         .graphicsLayer {
-                            val scale = 0.95f + 0.05f * lit
+                            // trails the scroll for a moment (the stagger), and the sung line stands a size up
+                            translationY = stagger.lagOf(i)
+                            val scale = 0.92f + 0.08f * lit
                             scaleX = scale
                             scaleY = scale
                             transformOrigin = TransformOrigin(0f, 0.5f)
                         }
-                        // lines far from the sung one go a little soft, so the eye stays on it
-                        .blur((2.5f * (1f - near)).dp),
-                    color = Color.White.copy(alpha = 0.28f + 0.72f * lit),
-                    style = MaterialTheme.typography.bodyLarge.copy(shadow = Shadow(Color.White.copy(alpha = 0.5f * lit), blurRadius = 26f * lit)),
+                        .blur((1.4f * soft).dp),
+                    color = Color.White.copy(alpha = 0.32f + 0.68f * lit),
+                    style = MaterialTheme.typography.bodyLarge,
                     fontSize = 30.sp,
                     lineHeight = 36.sp,
                     fontWeight = FontWeight.Bold,
