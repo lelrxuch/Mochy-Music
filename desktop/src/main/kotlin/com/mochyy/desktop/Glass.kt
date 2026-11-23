@@ -91,9 +91,9 @@ private val GlassTint = Color(0xFF131313)
  */
 fun Modifier.liquidGlass(
     shape: Shape,
-    tint: Float = 0.5f,
-    depth: Dp = 14.dp,
-    blur: Dp = 22.dp,
+    tint: Float = 0.22f,
+    depth: Dp = 16.dp,
+    blur: Dp = 7.dp,
     elevation: Dp = 12.dp,
 ): Modifier = composed {
     val backdrop = LocalGlass.current
@@ -173,13 +173,20 @@ half4 main(float2 coord) {
     } else {
         n = float2(0.0, s.y);
     }
+    // 0 deep inside, 1 on the rim; the bend grows fast toward the rim, like the curved edge of a lens
     float edge = clamp(1.0 + d / depth, 0.0, 1.0);
-    float2 bend = -n * edge * edge * depth;
+    float2 bend = -n * edge * edge * edge * depth * 2.2;
     half4 c = content.eval(coord + bend);
-    c.r = content.eval(coord + bend * 1.12).r;
-    c.b = content.eval(coord + bend * 0.88).b;
-    float light = pow(edge, 5.0) * clamp(dot(n, float2(0.0, -1.0)), 0.0, 1.0);
-    c.rgb = c.rgb + half3(light * 0.35);
+    c.r = content.eval(coord + bend * 1.18).r;
+    c.b = content.eval(coord + bend * 0.82).b;
+    // glass livens colour a little rather than greying it
+    half l = dot(c.rgb, half3(0.299, 0.587, 0.114));
+    c.rgb = mix(half3(l), c.rgb, 1.25);
+    // light from above catches the top rim, a weaker bounce lights the bottom one
+    float rim = pow(edge, 6.0);
+    float lit = rim * (0.55 * clamp(dot(n, normalize(float2(-0.35, -1.0))), 0.0, 1.0)
+                     + 0.22 * clamp(dot(n, normalize(float2(0.35, 1.0))), 0.0, 1.0));
+    c.rgb = c.rgb + half3(lit);
     c.a = 1.0;
     return c;
 }
