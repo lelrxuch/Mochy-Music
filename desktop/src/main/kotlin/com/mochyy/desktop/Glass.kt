@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.RenderEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -37,8 +38,8 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.FilterTileMode
+import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageFilter
 import org.jetbrains.skia.ImageInfo
 import org.jetbrains.skia.RuntimeEffect
@@ -215,10 +216,6 @@ private val GrainBrush: ShaderBrush by lazy {
         pixels[i * 4 + 2] = value.toByte()
         pixels[i * 4 + 3] = alpha.toByte()
     }
-    val bitmap = Bitmap().apply {
-        allocPixels(ImageInfo.makeN32Premul(tile, tile))
-        installPixels(pixels)
-    }
-    val image: ImageBitmap = bitmap.toComposeImageBitmap()
+    val image: ImageBitmap = Image.makeRaster(ImageInfo.makeN32Premul(tile, tile), pixels, tile * 4).toComposeImageBitmap()
     ShaderBrush(ImageShader(image, TileMode.Repeated, TileMode.Repeated))
 }
