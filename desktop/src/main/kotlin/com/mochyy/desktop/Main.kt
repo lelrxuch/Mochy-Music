@@ -103,6 +103,10 @@ private fun shortcut(app: AppState, event: KeyEvent): Boolean {
     return true
 }
 
+/** the whole app without its window, for the screenshots CI takes */
+@Composable
+internal fun ShellForTest() = Shell()
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun Shell() {
