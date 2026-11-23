@@ -10,8 +10,15 @@ Cada fase reutiliza el código Android cuando es Kotlin puro y lo reescribe cuan
 - Cuenta de YouTube Music desde el navegador (y refresco cuando Google rota la sesión).
 - Biblioteca sincronizada: me gusta, álbumes, artistas, playlists, con cambios pendientes.
 - Una sola instancia; controles multimedia de GNOME y teclas multimedia (MPRIS propio).
+- CI en GitHub Actions (`.github/workflows/desktop.yml`): compila, prueba y saca capturas a la rama `desktop-ci`.
 
-## Fase 1: liquid glass y movimiento (base de todo lo demás)
+## Fase 1: liquid glass y movimiento (base de todo lo demás) — casi completa
+Hecho: vidrio líquido real (Glass.kt) en barra, mini reproductor, avisos y botón atrás; píldora de la
+barra con resorte; presión 3D; aparición escalonada; fondo ambiental del reproductor; la carátula
+viaja entre mini reproductor y reproductor; letras con brillo y onda; explosión de me gusta.
+Pendiente: menús y diálogos en vidrio (los menús se abren en ventanas aparte, sin fondo que leer),
+título y artista que viajan con la carátula.
+
 Android: `ui/component/GlassKit.kt`, `FrostedGlass.kt`, `ProgressiveBlur.kt`, `AgslShader.kt`,
 `Press3D.kt`, `ContainerTransform.kt`, `RevealOnAppear.kt`, `PageWipe.kt`, `ui/player/flagship/`.
 - Vidrio real: el fondo de la app capturado (`GraphicsLayer`) y pasado por un shader SkSL de Skia:
