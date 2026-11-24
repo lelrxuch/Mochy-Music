@@ -36,4 +36,12 @@
     <string name="desktop_login_failed">Esa sesión no funcionó. Vuelve a iniciar sesión en el navegador e inténtalo otra vez.</string>
     <string name="desktop_sync">Sincronizar con YouTube Music</string>
     <string name="desktop_syncing">Sincronizando…</string>
+    <string name="desktop_added_to">Añadido a %1$s</string>
+    <string name="desktop_created">Creada: %1$s</string>
+    <string name="desktop_action_failed">No se pudo completar. Inténtalo otra vez.</string>
+    <string name="desktop_rename">Renombrar</string>
+    <string name="desktop_delete_title">¿Eliminar %1$s?</string>
+    <string name="desktop_delete_body">No se puede deshacer.</string>
+    <string name="desktop_playlist_empty">Todavía no hay nada. Añade canciones desde el menú de cualquier canción.</string>
+    <string name="desktop_unsave">Quitar de la biblioteca</string>
 </resources>

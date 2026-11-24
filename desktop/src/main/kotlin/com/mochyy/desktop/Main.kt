@@ -72,7 +72,7 @@ fun main() {
     // the sign-in goes first, so the first home feed is already the account's own
     val account = AccountStore()
     account.keepFresh(scope)
-    val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account))
+    val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account), scope)
     val mpris = Mpris(scope, app.player)
     val icon = BitmapPainter(Image.makeFromEncoded(AppState::class.java.getResource("/icon.png")!!.readBytes()).toComposeImageBitmap())
     application {
@@ -105,7 +105,7 @@ private fun shortcut(app: AppState, event: KeyEvent): Boolean {
     if (event.type != KeyEventType.KeyDown) return false
     when {
         event.key == Key.Spacebar -> app.player.togglePause()
-        event.key == Key.Escape -> app.nav.back()
+        event.key == Key.Escape -> if (app.sheet != null) app.closeSheet() else app.nav.back()
         event.isAltPressed && event.key == Key.DirectionLeft -> app.nav.back()
         event.isCtrlPressed && event.key == Key.DirectionRight -> app.player.next()
         event.isCtrlPressed && event.key == Key.DirectionLeft -> app.player.previous()
@@ -145,6 +145,7 @@ private fun Shell() {
                 is Route.Artist -> ArtistScreen(route.id)
                 is Route.Album -> AlbumScreen(route.id)
                 is Route.Playlist -> PlaylistScreen(route.id)
+                is Route.LocalPlaylist -> LocalPlaylistScreen(route.id)
             } }
         } }
         if (route != null) {
@@ -189,5 +190,6 @@ private fun Shell() {
         ) {
             CompositionLocalProvider(LocalVisibilityScope provides this) { NowPlaying(onClose = { nav.playerOpen = false }) }
         }
+        SheetHost()
     } } }
 }

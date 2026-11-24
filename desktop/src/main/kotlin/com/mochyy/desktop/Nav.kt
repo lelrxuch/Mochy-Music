@@ -12,7 +12,9 @@ import com.music.innertube.models.ArtistItem
 import com.music.innertube.models.PlaylistItem
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.YTItem
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
 
 /** A page past the four tabs. */
@@ -20,6 +22,7 @@ sealed interface Route {
     data class Artist(val id: String) : Route
     data class Album(val id: String) : Route
     data class Playlist(val id: String) : Route
+    data class LocalPlaylist(val id: String) : Route
 }
 
 /** The tab on show and the pages opened on top of it, newest last. */
@@ -59,7 +62,20 @@ class AppState(
     val search: SearchModel,
     val account: AccountStore,
     val sync: LibrarySync,
+    /** for work that should outlive the dialog or menu that started it */
+    val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
+    /** the dialog over the app (a [Sheet]), or null */
+    var sheet by mutableStateOf<(@Composable () -> Unit)?>(null)
+
+    fun showSheet(content: @Composable () -> Unit) {
+        sheet = content
+    }
+
+    fun closeSheet() {
+        sheet = null
+    }
+
     /** what a click on any item does: songs play, the rest open their page */
     fun open(item: YTItem) {
         when (item) {

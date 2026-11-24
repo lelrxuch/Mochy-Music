@@ -25,7 +25,12 @@ data class LibraryData(
     val volume: Double = 100.0,
     val highQuality: Boolean = true,
     val pending: List<PendingChange> = emptyList(),
+    val localPlaylists: List<LocalPlaylist> = emptyList(),
 )
+
+/** a playlist kept on this computer only, for when there's no YouTube account (the app's local playlists) */
+@Serializable
+data class LocalPlaylist(val id: String, val name: String, val songs: List<SongItem> = emptyList())
 
 /** a save made here that YouTube Music hasn't taken yet; [target] is the id its API wants, [id] the item's own */
 @Serializable
@@ -97,6 +102,39 @@ class LibraryStore(private val file: File = defaultFile()) {
             artists = artists ?: this.artists,
             playlists = playlists ?: this.playlists,
         )
+    }
+
+    fun localPlaylist(id: String) = data.localPlaylists.firstOrNull { it.id == id }
+
+    fun createPlaylist(name: String, songs: List<SongItem> = emptyList()): LocalPlaylist {
+        val playlist = LocalPlaylist("local-" + java.util.UUID.randomUUID(), name.trim(), songs.distinctBy { it.id })
+        update { copy(localPlaylists = listOf(playlist) + localPlaylists) }
+        return playlist
+    }
+
+    fun renamePlaylist(id: String, name: String) = editPlaylist(id) { copy(name = name.trim()) }
+
+    fun deletePlaylist(id: String) = update { copy(localPlaylists = localPlaylists.filterNot { it.id == id }) }
+
+    /** adds what isn't in it yet, at the end; the number added */
+    fun addToPlaylist(id: String, songs: List<SongItem>): Int {
+        val playlist = localPlaylist(id) ?: return 0
+        val new = songs.distinctBy { it.id }.filter { song -> playlist.songs.none { it.id == song.id } }
+        if (new.isNotEmpty()) editPlaylist(id) { copy(songs = this.songs + new) }
+        return new.size
+    }
+
+    fun removeFromPlaylist(id: String, index: Int) = editPlaylist(id) {
+        copy(songs = songs.filterIndexed { i, _ -> i != index })
+    }
+
+    fun moveInPlaylist(id: String, from: Int, to: Int) = editPlaylist(id) {
+        if (from !in songs.indices || to !in songs.indices) this
+        else copy(songs = songs.toMutableList().apply { add(to, removeAt(from)) })
+    }
+
+    private fun editPlaylist(id: String, change: LocalPlaylist.() -> LocalPlaylist) = update {
+        copy(localPlaylists = localPlaylists.map { if (it.id == id) it.change() else it })
     }
 
     fun setPending(pending: List<PendingChange>) = update { copy(pending = pending.distinctBy { it.id }) }

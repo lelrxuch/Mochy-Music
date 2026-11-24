@@ -37,4 +37,12 @@
     <string name="desktop_login_failed">That session didn\'t work. Sign in again in the browser and retry.</string>
     <string name="desktop_sync">Sync with YouTube Music</string>
     <string name="desktop_syncing">Syncing…</string>
+    <string name="desktop_added_to">Added to %1$s</string>
+    <string name="desktop_created">Created %1$s</string>
+    <string name="desktop_action_failed">That didn\'t work. Try again.</string>
+    <string name="desktop_rename">Rename</string>
+    <string name="desktop_delete_title">Delete %1$s?</string>
+    <string name="desktop_delete_body">This can\'t be undone.</string>
+    <string name="desktop_playlist_empty">Nothing here yet. Add songs from any song\'s menu.</string>
+    <string name="desktop_unsave">Remove from library</string>
 </resources>

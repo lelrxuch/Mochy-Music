@@ -158,29 +158,65 @@ fun PlaylistScreen(id: String) {
                     }
                 }
         }
+        // one of yours on YouTube Music: it can be renamed, deleted and have songs taken out
+        val editable = playlist.isEditable && app.account.session != null
+        var title by remember(page) { mutableStateOf(playlist.title) }
         ScrollPage(list) {
             LazyColumn(state = list, contentPadding = PaddingValues(top = 56.dp, bottom = ChromeClearance)) {
                 item(key = "header") {
                     CollectionHeader(
                         cover = playlist.thumbnail,
                         kind = str("desktop_playlist"),
-                        title = playlist.title,
+                        title = title,
                         by = playlist.author?.name.orEmpty(),
                         onBy = playlist.author?.id?.let { author -> { app.nav.open(Route.Artist(author)) } },
                         details = playlist.songCountText ?: songsDetails(songs),
                         songs = songs,
                         item = playlist,
                         radio = playlist.radioEndpoint?.let { endpoint -> { app.player.playEndpoint(endpoint, playlist.title) } },
+                        extra = {
+                            if (editable) {
+                                IconAction(drawable("edit"), str("desktop_rename"), {
+                                    app.showSheet {
+                                        NameSheet(str("desktop_rename"), str("save"), title) { name -> renameOnlinePlaylist(app, playlist, name) { title = name } }
+                                    }
+                                }, background = Color.White.copy(alpha = 0.12f), iconSize = 20.dp)
+                                IconAction(drawable("delete"), str("delete"), {
+                                    app.showSheet {
+                                        ConfirmSheet(str("desktop_delete_title", title), str("desktop_delete_body"), str("delete")) { deleteOnlinePlaylist(app, playlist) }
+                                    }
+                                }, background = Color.White.copy(alpha = 0.12f), iconSize = 20.dp)
+                            }
+                        },
                     )
                 }
-                songList(songs, playlist.title, numbered = false)
+                if (!editable) songList(songs, title, numbered = false)
+                else itemsIndexed(songs, key = { i, song -> "$i-${song.id}" }) { i, song ->
+                    SongRow(
+                        song, onClick = { app.player.playList(songs, i, title) },
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        trailing = song.setVideoId?.let { setVideoId ->
+                            {
+                                IconAction(drawable("close"), str("remove_from_playlist"), {
+                                    app.scope.launch {
+                                        val removed = withContext(Dispatchers.IO) {
+                                            signedIn { YouTube.removeFromPlaylist(playlist.id.removePrefix("VL"), song.id, setVideoId) }
+                                        }
+                                        if (removed.isSuccess) songs = songs.filterNot { it.setVideoId == setVideoId }
+                                        else app.player.message = str("desktop_action_failed")
+                                    }
+                                }, size = 32.dp, iconSize = 16.dp, tint = Dim)
+                            }
+                        },
+                    )
+                }
                 page.related?.let { section(str("desktop_more"), it) }
             }
         }
     }
 }
 
-private fun songsDetails(songs: List<SongItem>): String {
+internal fun songsDetails(songs: List<SongItem>): String {
     val seconds = songs.sumOf { it.duration ?: 0 }
     return str("desktop_song_count", songs.size) + if (seconds > 0) " · " + formatTime(seconds.toDouble()) else ""
 }
@@ -197,6 +233,7 @@ private fun CollectionHeader(
     songs: List<SongItem>,
     item: YTItem,
     radio: (() -> Unit)? = null,
+    extra: @Composable () -> Unit = {},
 ) {
     val app = LocalApp.current
     Row(Modifier.padding(horizontal = 24.dp, vertical = 16.dp), verticalAlignment = Alignment.Bottom) {
@@ -218,6 +255,7 @@ private fun CollectionHeader(
                 PillButton(str("shuffle"), { app.player.playList(songs, 0, title, shuffle = true) }, drawable("shuffle"), light = false)
                 if (radio != null) PillButton(str("radio"), radio, drawable("radio"), light = false)
                 SaveButton(item)
+                extra()
             }
         }
     }
@@ -296,7 +334,17 @@ fun LibraryScreen() {
                             Shelf.Artists -> data.artists
                             else -> data.playlists
                         }
-                        if (items.isEmpty()) item { EmptyShelf() }
+                        if (shelf == Shelf.Playlists) {
+                            item {
+                                Row(Modifier.padding(12.dp)) {
+                                    PillButton(str("create_playlist"), {
+                                        app.showSheet { NameSheet(str("create_playlist"), str("create")) { name -> createPlaylist(app, name) } }
+                                    }, drawable("add"))
+                                }
+                            }
+                            items(data.localPlaylists, key = { it.id }) { LocalPlaylistRow(it) }
+                        }
+                        if (items.isEmpty() && (shelf != Shelf.Playlists || data.localPlaylists.isEmpty())) item { EmptyShelf() }
                         items(items, key = { it.id }) { ItemRow(it) }
                     }
                 }

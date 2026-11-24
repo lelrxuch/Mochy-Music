@@ -90,9 +90,12 @@ fun YTItem.subtitle(): String = when (this) {
 fun songActions(app: AppState, song: SongItem): List<Pair<String, () -> Unit>> = buildList {
     add(str("play_next") to { app.player.playNext(song) })
     add(str("add_to_queue") to { app.player.addToQueue(song) })
+    add(str("add_to_playlist") to { app.showSheet { AddToPlaylistSheet(listOf(song)) } })
+    add(str("start_radio") to { app.player.playSong(song) })
     add((if (app.library.isLiked(song.id)) str("desktop_unlike") else str("like")) to { app.library.toggleLike(song) })
     song.artists.firstOrNull { it.id != null }?.let { artist -> add(str("view_artist") to { app.nav.open(Route.Artist(artist.id!!)) }) }
     song.album?.let { album -> add(str("view_album") to { app.nav.open(Route.Album(album.id)) }) }
+    add(str("copy_link") to { copyLink(app, song.shareLink) })
 }
 
 @Composable
@@ -148,7 +151,7 @@ fun MoreButton(actions: List<Pair<String, () -> Unit>>) {
 fun ItemCard(item: YTItem, width: Dp = 168.dp) {
     val app = LocalApp.current
     val round = item is ArtistItem
-    val menu = if (item is SongItem) songActions(app, item) else emptyList()
+    val menu = itemActions(app, item)
     ContextMenuArea(items = { menu.map { (label, action) -> ContextMenuItem(label, action) } }) {
         Column(
             Modifier.revealOnAppear("card:${item.id}").press3D().width(width).clip(RoundedCornerShape(16.dp)).clickable { app.open(item) }.padding(6.dp),
@@ -167,7 +170,7 @@ fun ItemCard(item: YTItem, width: Dp = 168.dp) {
 fun ItemRow(item: YTItem) {
     val app = LocalApp.current
     if (item is SongItem) return SongRow(item, onClick = { app.player.playSong(item) })
-    Row(
+    ContextMenuArea(items = { itemActions(app, item).map { (label, action) -> ContextMenuItem(label, action) } }) { Row(
         Modifier.revealOnAppear("row:${item.id}").fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { app.open(item) }.padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -177,7 +180,7 @@ fun ItemRow(item: YTItem) {
             Text(item.subtitle(), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = Dim)
         }
         Icon(drawable("chevron_right_px"), null, Modifier.size(20.dp), tint = Dim)
-    }
+    } }
 }
 
 /** pills to pick one of a few views, like the library's All / Local / Cached */
