@@ -31,7 +31,12 @@ Android: `ui/component/GlassKit.kt`, `FrostedGlass.kt`, `ProgressiveBlur.kt`, `A
 - Reproductor flagship completo: fondo ambiental con los colores de la carátula, carátula
   desenfocada, reflejo, letras con brillo y escalonado, puntos de interludio.
 
-## Fase 2: biblioteca, playlists y menús
+## Fase 2: biblioteca, playlists y menús — en curso
+Hecho: playlists de tu cuenta editables (crear, renombrar, borrar, añadir y quitar canciones) y
+playlists locales sin cuenta; "añadir a playlist"; menús de canción, álbum, artista y playlist;
+diálogos de la app en vidrio; Explorar (listas de éxitos, ánimos y géneros, novedades).
+Pendiente: selección múltiple, reordenar canciones arrastrando, añadir un álbum entero a una playlist,
+historial de YouTube.
 Android: `ui/menu/`, `ui/screens/library/`, `ui/screens/playlist/`, `ExploreScreen`, `SectionDetailScreen`.
 - Crear, editar, ordenar y borrar playlists (locales y de YouTube); añadir a playlist.
 - Menús completos de canción, álbum, artista y playlist; selección múltiple.
