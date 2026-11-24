@@ -137,6 +137,9 @@ class LibraryStore(private val file: File = defaultFile()) {
         copy(localPlaylists = localPlaylists.map { if (it.id == id) it.change() else it })
     }
 
+    /** changes the account's playlists shelf right away, before YouTube's copy catches up */
+    fun editSavedPlaylists(change: (List<PlaylistItem>) -> List<PlaylistItem>) = update { copy(playlists = change(playlists)) }
+
     fun setPending(pending: List<PendingChange>) = update { copy(pending = pending.distinctBy { it.id }) }
 
     fun setVolume(volume: Double) = update { copy(volume = volume) }

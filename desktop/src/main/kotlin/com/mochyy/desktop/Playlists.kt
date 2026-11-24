@@ -257,15 +257,22 @@ fun createPlaylist(app: AppState, name: String, songs: List<SongItem> = emptyLis
         return
     }
     app.scope.launch {
-        val made = withContext(Dispatchers.IO) {
-            signedIn { runCatching { YouTube.createPlaylist(name) } }.mapCatching { id ->
-                if (songs.isNotEmpty()) YouTube.addVideosToPlaylist(id, songs.map { it.id }).getOrThrow()
-                id
-            }
+        val made = withContext(Dispatchers.IO) { signedIn { runCatching { YouTube.createPlaylist(name) } } }
+        val id = made.getOrNull()
+        if (id == null) {
+            app.player.message = str("desktop_action_failed")
+            return@launch
         }
-        app.player.message = if (made.isSuccess) str("desktop_created", name) else str("desktop_action_failed")
-        // the new playlist shows in the library with the next pull
-        if (made.isSuccess) app.sync.pull()
+        // on the shelf at once; YouTube's own list can take a while to show a new playlist
+        val playlist = PlaylistItem(
+            id = "VL$id", title = name, author = null, songCountText = null, thumbnail = songs.firstOrNull()?.thumbnail,
+            playEndpoint = null, shuffleEndpoint = null, radioEndpoint = null, isEditable = true,
+        )
+        app.sync.keepCreated(playlist.id)
+        app.library.editSavedPlaylists { listOf(playlist) + it }
+        val added = songs.isEmpty() || withContext(Dispatchers.IO) { signedIn { YouTube.addVideosToPlaylist(id, songs.map { it.id }) } }.isSuccess
+        app.player.message = if (added) str("desktop_created", name) else str("desktop_action_failed")
+        app.sync.pull()
     }
 }
 
@@ -275,6 +282,7 @@ fun renameOnlinePlaylist(app: AppState, playlist: PlaylistItem, name: String, on
         app.player.message = if (renamed.isSuccess) null else str("desktop_action_failed")
         if (renamed.isSuccess) {
             onDone()
+            app.library.editSavedPlaylists { list -> list.map { if (it.id == playlist.id) it.copy(title = name) else it } }
             app.sync.pull()
         }
     }
@@ -285,6 +293,8 @@ fun deleteOnlinePlaylist(app: AppState, playlist: PlaylistItem) {
         val deleted = withContext(Dispatchers.IO) { signedIn { YouTube.deletePlaylist(playlist.id.removePrefix("VL")) } }
         if (deleted.isSuccess) {
             app.nav.back()
+            app.sync.forgetCreated(playlist.id)
+            app.library.editSavedPlaylists { list -> list.filterNot { it.id == playlist.id } }
             app.sync.pull()
         } else {
             app.player.message = str("desktop_action_failed")

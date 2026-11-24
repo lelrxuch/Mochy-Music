@@ -33,6 +33,21 @@ class LibrarySync(private val scope: CoroutineScope, private val library: Librar
     var syncing by mutableStateOf(false)
         private set
 
+    // a pull asked for while one runs goes again when it's done, instead of being dropped
+    private var again = false
+    private var againAdopt = false
+
+    // playlists made here: kept on the shelf until YouTube's own list shows them, which can take a while
+    private val created = HashSet<String>()
+
+    fun keepCreated(id: String) {
+        created.add(id)
+    }
+
+    fun forgetCreated(id: String) {
+        created.remove(id)
+    }
+
     init {
         library.onChange = ::push
         if (account.session != null) pull()
@@ -48,7 +63,12 @@ class LibrarySync(private val scope: CoroutineScope, private val library: Librar
 
     /** brings the account's library in; with [adopt] (just signed in) what was saved here before goes up too, instead of being dropped */
     fun pull(adopt: Boolean = false) {
-        if (account.session == null || syncing) return
+        if (account.session == null) return
+        if (syncing) {
+            again = true
+            againAdopt = againAdopt || adopt
+            return
+        }
         syncing = true
         scope.launch {
             try {
@@ -66,10 +86,17 @@ class LibrarySync(private val scope: CoroutineScope, private val library: Librar
                     liked = merge(remote.liked, local.liked, pending, adopt),
                     albums = merge(remote.albums, local.albums, pending, adopt),
                     artists = merge(remote.artists, local.artists, pending, adopt),
-                    playlists = merge(remote.playlists, local.playlists, pending, adopt),
+                    playlists = merge(remote.playlists, local.playlists, pending, adopt, keep = created),
                 )
+                remote.playlists?.forEach { created.remove(it.id) }
             } finally {
                 syncing = false
+            }
+            if (again) {
+                val adoptNext = againAdopt
+                again = false
+                againAdopt = false
+                pull(adoptNext)
             }
         }
     }
@@ -98,10 +125,10 @@ class LibrarySync(private val scope: CoroutineScope, private val library: Librar
 }
 
 /** YouTube's shelf, plus what's waiting to go up (or was saved here before signing in, with [adopt]), minus what's waiting to come off */
-fun <T : YTItem> merge(remote: List<T>?, local: List<T>, pending: List<PendingChange>, adopt: Boolean): List<T>? {
+fun <T : YTItem> merge(remote: List<T>?, local: List<T>, pending: List<PendingChange>, adopt: Boolean, keep: Set<String> = emptySet()): List<T>? {
     if (remote == null) return null
     val remoteIds = remote.mapTo(HashSet()) { it.id }
     val wanted = pending.associate { it.id to it.on }
-    val kept = local.filter { it.id !in remoteIds && (adopt || wanted[it.id] == true) }
+    val kept = local.filter { it.id !in remoteIds && (adopt || wanted[it.id] == true || it.id in keep) }
     return (kept + remote).filter { wanted[it.id] != false }
 }

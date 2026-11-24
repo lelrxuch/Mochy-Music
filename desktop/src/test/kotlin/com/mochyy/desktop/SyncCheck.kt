@@ -25,6 +25,14 @@ class SyncCheck {
     }
 
     @Test
+    fun aJustCreatedPlaylistStaysUntilYouTubeListsIt() {
+        val remote = listOf(artist("a"))
+        val local = listOf(artist("new"), artist("a"))
+        assertEquals(listOf("a"), ids(merge(remote, local, emptyList(), adopt = false)))
+        assertEquals(listOf("new", "a"), ids(merge(remote, local, emptyList(), adopt = false, keep = setOf("new"))))
+    }
+
+    @Test
     fun artistsSubscribeByChannel() {
         val change = artist("UCabc").copy(channelId = "UCxyz").toChange(on = true)!!
         assertEquals(PendingChange("UCabc", PendingChange.ARTIST, "UCxyz", true), change)
