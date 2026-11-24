@@ -23,6 +23,8 @@ sealed interface Route {
     data class Album(val id: String) : Route
     data class Playlist(val id: String) : Route
     data class LocalPlaylist(val id: String) : Route
+    /** a mood, genre or chart page: YouTube Music's browse endpoint */
+    data class Browse(val id: String, val params: String?, val title: String) : Route
 }
 
 /** The tab on show and the pages opened on top of it, newest last. */

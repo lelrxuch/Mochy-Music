@@ -146,6 +146,7 @@ private fun Shell() {
                 is Route.Album -> AlbumScreen(route.id)
                 is Route.Playlist -> PlaylistScreen(route.id)
                 is Route.LocalPlaylist -> LocalPlaylistScreen(route.id)
+                is Route.Browse -> BrowseScreen(route)
             } }
         } }
         if (route != null) {

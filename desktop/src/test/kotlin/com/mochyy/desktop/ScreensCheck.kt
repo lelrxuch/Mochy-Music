@@ -82,6 +82,11 @@ class ScreensCheck {
         }
         app.nav.select(Tab.Library)
         shot("6-library", 6)
+        // a dialog on glass, over the library: add to playlist, with one playlist of this computer's
+        library.createPlaylist("Road trip", library.data.liked.take(3))
+        library.data.liked.firstOrNull()?.let { song -> app.showSheet { AddToPlaylistSheet(listOf(song)) } }
+        shot("6b-add-to-playlist", 3)
+        app.closeSheet()
         // the player with a sample song: its stream won't load on CI, but the page and its backdrop do
         library.data.liked.firstOrNull()?.let { song ->
             app.player.playSong(song)
