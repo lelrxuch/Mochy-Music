@@ -50,4 +50,5 @@
     <string name="desktop_like_all">Like all</string>
     <string name="desktop_history_here">This computer</string>
     <string name="desktop_history_account">YouTube Music</string>
+    <string name="desktop_needs_ytdlp">This song needs yt-dlp. Install it with: sudo dnf install yt-dlp</string>
 </resources>

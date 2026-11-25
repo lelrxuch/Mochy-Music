@@ -6,34 +6,12 @@ import androidx.compose.runtime.setValue
 import com.music.innertube.YouTube
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
-import com.music.innertube.models.YouTubeClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
-
-/**
- * A playable audio link, asked the way the Android app asks first: the VISIONOS client hands out
- * direct links that need no extra token. A bot check burns the visitor id, so it gets one fresh id
- * and one more try, like the app does. [high] picks the best bitrate, otherwise the smallest.
- */
-suspend fun audioUrl(videoId: String, high: Boolean = true): String {
-    suspend fun ask() = YouTube.player(videoId, null, YouTubeClient.VISIONOS).getOrNull()
-    var response = ask()
-    if (response?.playabilityStatus?.status == "LOGIN_REQUIRED") {
-        YouTube.refreshVisitorData(YouTubeClient.VISIONOS)
-        response = ask()
-    }
-    val formats = response?.takeIf { it.playabilityStatus.status == "OK" }
-        ?.streamingData?.adaptiveFormats.orEmpty()
-        .filter { it.isAudio && it.url != null }
-    return (if (high) formats.maxByOrNull { it.bitrate } else formats.minByOrNull { it.bitrate })?.url
-        // ponytail: what VISIONOS refuses (age-restricted, flagged network) goes to mpv's yt-dlp hook;
-        // the app's other fallback clients and sign-in aren't ported yet
-        ?: "https://music.youtube.com/watch?v=$videoId"
-}
 
 /** "OPUS · 48,0 kHz", the badge the player shows beside the title */
 fun formatBadge(codec: String?, sampleRate: Int?): String? {
@@ -215,9 +193,16 @@ class Player(private val scope: CoroutineScope, private val library: LibraryStor
         player.stop()
         streamJob?.cancel()
         streamJob = scope.launch {
-            val url = withContext(Dispatchers.IO) { runCatching { audioUrl(song.id, library.data.highQuality) } }
-            url.onSuccess { player.play(it, "${song.title} - ${song.artistNames()}", YouTubeClient.VISIONOS.userAgent) }
-                .onFailure { message = str("desktop_cant_play") }
+            val stream = withContext(Dispatchers.IO) { runCatching { findStream(song.id, library.data.highQuality) } }
+            stream.onSuccess {
+                if (it.viaYtDlp && !hasYtDlp) {
+                    message = str("desktop_needs_ytdlp")
+                } else {
+                    // yt-dlp gets the session's cookies, so songs that need a signed-in account play too
+                    val cookies = if (it.viaYtDlp) withContext(Dispatchers.IO) { ytDlpCookies() } else null
+                    player.play(it.url, "${song.title} - ${song.artistNames()}", it.userAgent, cookies)
+                }
+            }.onFailure { message = str("desktop_cant_play") }
             loading = false
         }
         loadLyrics(song)

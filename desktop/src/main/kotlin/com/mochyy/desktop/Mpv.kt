@@ -22,6 +22,9 @@ import java.nio.channels.SocketChannel
  * (https://mpv.io/manual/stable/#json-ipc) and listens for position, pause and end-of-track.
  * [onFileEnd] gets mpv's reason: "eof" when a song finished, "error" when it couldn't play.
  */
+// what mpv sends when no client asked for a particular one
+private const val DEFAULT_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0"
+
 class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason: String) -> Unit) : AutoCloseable {
     // mpv's socket accepts any command, even running programs, so it lives in the user's private runtime dir, not shared /tmp
     private val socket = File(
@@ -51,11 +54,13 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
         send("observe_property", 6, "audio-params/samplerate")
     }
 
-    fun play(url: String, title: String, userAgent: String) {
-        // the title is what GNOME's media controls show when mpv-mpris is installed
+    fun play(url: String, title: String, userAgent: String?, cookies: File? = null) {
         send("set_property", "force-media-title", title)
         // googlevideo checks links against the client that asked for them
-        send("set_property", "user-agent", userAgent)
+        send("set_property", "user-agent", userAgent ?: DEFAULT_USER_AGENT)
+        // only used when the link is a watch page that mpv hands to yt-dlp
+        send("set_property", "ytdl-format", "bestaudio/best")
+        send("set_property", "ytdl-raw-options", cookies?.let { "cookies=${it.path}" } ?: "")
         send("loadfile", url)
         send("set_property", "pause", false)
     }
