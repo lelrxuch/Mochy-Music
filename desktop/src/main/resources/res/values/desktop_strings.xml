@@ -53,4 +53,8 @@
     <string name="desktop_needs_ytdlp">This song needs yt-dlp. Install it with: sudo dnf install yt-dlp</string>
     <string name="desktop_sleep_until">Pauses at %1$s</string>
     <string name="desktop_minutes">%1$d min</string>
+    <string name="desktop_report_title">YouTube history</string>
+    <string name="desktop_report_body">What you play in Mochy shows in your account\'s history and shapes its recommendations, like YouTube\'s own app.</string>
+    <string name="desktop_on">On</string>
+    <string name="desktop_off">Off</string>
 </resources>

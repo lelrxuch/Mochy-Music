@@ -26,6 +26,7 @@ data class LibraryData(
     val highQuality: Boolean = true,
     val pending: List<PendingChange> = emptyList(),
     val localPlaylists: List<LocalPlaylist> = emptyList(),
+    val reportPlays: Boolean = true,
 )
 
 /** a playlist kept on this computer only, for when there's no YouTube account (the app's local playlists) */
@@ -145,6 +146,8 @@ class LibraryStore(private val file: File = defaultFile()) {
     fun setVolume(volume: Double) = update { copy(volume = volume) }
 
     fun setHighQuality(high: Boolean) = update { copy(highQuality = high) }
+
+    fun setReportPlays(report: Boolean) = update { copy(reportPlays = report) }
 
     private fun update(change: LibraryData.() -> LibraryData) {
         data = data.change()

@@ -52,4 +52,8 @@
     <string name="desktop_needs_ytdlp">Esta canción necesita yt-dlp. Instálalo con: sudo dnf install yt-dlp</string>
     <string name="desktop_sleep_until">Se pausa a las %1$s</string>
     <string name="desktop_minutes">%1$d min</string>
+    <string name="desktop_report_title">Historial de YouTube</string>
+    <string name="desktop_report_body">Lo que escuchas en Mochy aparece en el historial de tu cuenta y mejora sus recomendaciones, como en la app de YouTube.</string>
+    <string name="desktop_on">Activado</string>
+    <string name="desktop_off">Desactivado</string>
 </resources>

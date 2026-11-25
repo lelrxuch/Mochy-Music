@@ -88,8 +88,12 @@ class Player(
         }
     }.getOrNull()?.also { it.setVolume(library.data.volume) }
 
+    /** tells YouTube what's listened to, for the account's history and recommendations */
+    private val reporter = PlayReporter(scope) { ((mpv?.position?.value ?: 0.0) * 1000).toLong() }
+
     init {
         restoreQueue()
+        mpv?.let { player -> scope.launch { player.paused.collect { reporter.onPlayingChanged(!it) } } }
         // the restored song starts where it was left, once mpv knows how long it is
         mpv?.let { player ->
             scope.launch {
@@ -182,7 +186,11 @@ class Player(
         if (player.duration.value <= 0.0 && current != null && !loading) startAt(index, keepSeek = true) else player.togglePause()
     }
 
-    fun seek(seconds: Double) = mpv?.seek(seconds)
+    fun seek(seconds: Double) {
+        val player = mpv ?: return
+        reporter.onJump((player.position.value * 1000).toLong(), (seconds * 1000).toLong())
+        player.seek(seconds)
+    }
 
     /** [save] writes it to the library, only once a drag ends rather than on every step of it */
     fun setVolume(percent: Double, save: Boolean) {
@@ -238,6 +246,7 @@ class Player(
     }
 
     fun close() {
+        reporter.onSongStop()
         saveQueue(mpv?.position?.value ?: 0.0, now = true)
         mpv?.close()
     }
@@ -283,6 +292,8 @@ class Player(
         index = position
         if (!keepSeek) pendingSeek = 0.0
         saveQueue(pendingSeek)
+        // the song being left ends its listen here, where it was
+        reporter.onSongStop()
         val player = mpv ?: run {
             message = str("desktop_mpv_missing")
             return
@@ -301,6 +312,8 @@ class Player(
                     // yt-dlp gets the session's cookies, so songs that need a signed-in account play too
                     val cookies = if (it.viaYtDlp) withContext(Dispatchers.IO) { ytDlpCookies() } else null
                     player.play(it.url, "${song.title} - ${song.artistNames()}", it.userAgent, cookies)
+                    reporter.enabled = library.data.reportPlays
+                    reporter.onSongStart(song.id, (song.duration ?: 0) * 1000L)
                 }
             }.onFailure { message = str("desktop_cant_play") }
             loading = false
@@ -310,6 +323,7 @@ class Player(
     }
 
     private fun onTrackEnd() {
+        reporter.onSongStop()
         // the sleep timer was set to the end of this song
         if (sleepAtSongEnd) {
             sleepAtSongEnd = false

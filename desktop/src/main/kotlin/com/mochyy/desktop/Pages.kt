@@ -410,6 +410,13 @@ fun SettingsScreen() {
         LazyColumn(state = list, contentPadding = PaddingValues(bottom = ChromeClearance)) {
             item { PageTitle(str("settings")) }
             item { AccountCard() }
+            if (app.account.session != null) {
+                item {
+                    SettingsCard(str("desktop_report_title"), str("desktop_report_body")) {
+                        ChoiceChipsInline(listOf(true, false), app.library.data.reportPlays, { str(if (it) "desktop_on" else "desktop_off") }, app.library::setReportPlays)
+                    }
+                }
+            }
             item {
                 SettingsCard(str("audio_quality"), str("desktop_quality_body")) {
                     ChoiceChipsInline(
