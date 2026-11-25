@@ -47,7 +47,9 @@ Android: `playback/`, `utils/YTPlayerUtils`, `crossmix/`.
 - Caché y descargas para escuchar sin conexión.
 - Crossmix: fundidos y transiciones entre canciones (dos instancias de mpv); normalización.
 
-## Fase 4: Audio Lab
+## Fase 4: Audio Lab — primera versión hecha
+Hecho: ecualizador de 10 bandas con los 20 presets de la app, reverberación, 8D, crossfeed, mono, velocidad.
+Pendiente: guardar presets propios, corrección de auriculares (AutoEq), compresor de volumen.
 Android: `eq/`, `ui/screens/audiolab/`, `ui/screens/equalizer/`.
 - Ecualizador con presets, reverberación, audio 8D y demás efectos, con los filtros de mpv (lavfi).
 
