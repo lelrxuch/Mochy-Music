@@ -461,6 +461,11 @@ fun SettingsScreen() {
                 }
             }
             item {
+                SettingsCard(str("desktop_diag_title"), str("desktop_diag_body")) {
+                    PillButton(str("desktop_diag_run"), { app.showSheet { DiagnosticsSheet() } }, light = false)
+                }
+            }
+            item {
                 SettingsCard(str("desktop_about_title"), str("desktop_about_body")) {
                     Text("Mochy para Linux $APP_VERSION", color = Dim, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(12.dp))

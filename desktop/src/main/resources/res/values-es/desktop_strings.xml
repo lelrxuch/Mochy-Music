@@ -76,4 +76,11 @@
     <string name="desktop_crossfeed">Crossfeed</string>
     <string name="desktop_mono">Mono</string>
     <string name="desktop_speed">Velocidad</string>
+    <string name="desktop_diag_title">Diagnóstico de reproducción</string>
+    <string name="desktop_diag_body">Comprueba, en esta red, qué fuentes de audio responden, yt-dlp, los filtros de Audio Lab de tu mpv y la carpeta de descargas</string>
+    <string name="desktop_diag_run">Ejecutar diagnóstico</string>
+    <string name="desktop_diag_running">Comprobando… (hasta un minuto)</string>
+    <string name="desktop_diag_copy">Copiar informe</string>
+    <string name="desktop_diag_chosen">Fuente con la que suena</string>
+    <string name="desktop_diag_test_tone">mpv reproduce un tono de prueba</string>
 </resources>
