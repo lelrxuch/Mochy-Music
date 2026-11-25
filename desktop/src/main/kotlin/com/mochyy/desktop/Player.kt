@@ -94,7 +94,16 @@ class Player(
     /** tells YouTube what's listened to, for the account's history and recommendations */
     private val reporter = PlayReporter(scope) { ((mpv?.position?.value ?: 0.0) * 1000).toLong() }
 
+    /** the Audio Lab settings into mpv; they stay on for every song after */
+    fun applyAudioLab() {
+        val player = mpv ?: return
+        val lab = library.data.audioLab
+        player.setFilters(audioFilters(lab))
+        player.setSpeed(lab.speed)
+    }
+
     init {
+        applyAudioLab()
         restoreQueue()
         mpv?.let { player -> scope.launch { player.paused.collect { reporter.onPlayingChanged(!it) } } }
         // the restored song starts where it was left, once mpv knows how long it is

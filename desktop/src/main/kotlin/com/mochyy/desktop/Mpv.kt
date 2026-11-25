@@ -69,6 +69,11 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
 
     fun togglePause() = send("cycle", "pause")
 
+    /** ffmpeg filters for the sound (Audio Lab); "" takes them all away */
+    fun setFilters(chain: String) = send("set_property", "af", chain)
+
+    fun setSpeed(speed: Double) = send("set_property", "speed", speed)
+
     fun seek(seconds: Double) = send("seek", seconds, "absolute")
 
     fun setVolume(percent: Double) = send("set_property", "volume", percent.coerceIn(0.0, 100.0))

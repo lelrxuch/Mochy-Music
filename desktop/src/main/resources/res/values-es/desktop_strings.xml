@@ -64,4 +64,16 @@
     <string name="desktop_download_failed">No se pudo descargar %1$s</string>
     <string name="desktop_downloads_empty">Las canciones que descargues suenan aquí sin conexión. Descarga desde el menú de cualquier canción.</string>
     <string name="desktop_normalize_body">Iguala el volumen entre canciones fuertes y suaves, con la medida que YouTube hace de cada una</string>
+    <string name="desktop_audiolab_body">Ecualizador con los presets de la app, reverberación, audio 8D, crossfeed, mono y velocidad</string>
+    <string name="desktop_open_audiolab">Abrir Audio Lab</string>
+    <string name="desktop_equalizer">Ecualizador</string>
+    <string name="desktop_reverb">Reverberación</string>
+    <string name="desktop_reverb_room">Habitación</string>
+    <string name="desktop_reverb_hall">Sala</string>
+    <string name="desktop_reverb_cathedral">Catedral</string>
+    <string name="desktop_effects">Efectos</string>
+    <string name="desktop_8d">Audio 8D</string>
+    <string name="desktop_crossfeed">Crossfeed</string>
+    <string name="desktop_mono">Mono</string>
+    <string name="desktop_speed">Velocidad</string>
 </resources>

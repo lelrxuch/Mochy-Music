@@ -169,6 +169,7 @@ private fun Shell() {
                 is Route.Playlist -> PlaylistScreen(route.id)
                 is Route.LocalPlaylist -> LocalPlaylistScreen(route.id)
                 is Route.Browse -> BrowseScreen(route)
+                Route.AudioLab -> AudioLabScreen()
             } }
         } }
         if (route != null) {

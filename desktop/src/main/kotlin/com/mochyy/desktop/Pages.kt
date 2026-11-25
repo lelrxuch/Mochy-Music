@@ -435,6 +435,11 @@ fun SettingsScreen() {
                 }
             }
             item {
+                SettingsCard("Audio Lab", str("desktop_audiolab_body")) {
+                    PillButton(str("desktop_open_audiolab"), { app.nav.open(Route.AudioLab) })
+                }
+            }
+            item {
                 SettingsCard(str("audio_normalization"), str("desktop_normalize_body")) {
                     ChoiceChipsInline(listOf(true, false), app.library.data.normalize, { str(if (it) "desktop_on" else "desktop_off") }, app.library::setNormalize)
                 }

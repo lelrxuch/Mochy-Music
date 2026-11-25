@@ -65,4 +65,16 @@
     <string name="desktop_download_failed">Couldn\'t download %1$s</string>
     <string name="desktop_downloads_empty">Songs you download play here without a connection. Download from any song\'s menu.</string>
     <string name="desktop_normalize_body">Evens out loud and quiet songs, using the loudness YouTube measured for each</string>
+    <string name="desktop_audiolab_body">Equaliser with the app\'s presets, reverb, 8D audio, crossfeed, mono and speed</string>
+    <string name="desktop_open_audiolab">Open Audio Lab</string>
+    <string name="desktop_equalizer">Equaliser</string>
+    <string name="desktop_reverb">Reverb</string>
+    <string name="desktop_reverb_room">Room</string>
+    <string name="desktop_reverb_hall">Hall</string>
+    <string name="desktop_reverb_cathedral">Cathedral</string>
+    <string name="desktop_effects">Effects</string>
+    <string name="desktop_8d">8D audio</string>
+    <string name="desktop_crossfeed">Crossfeed</string>
+    <string name="desktop_mono">Mono</string>
+    <string name="desktop_speed">Speed</string>
 </resources>
