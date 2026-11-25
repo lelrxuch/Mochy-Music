@@ -67,6 +67,9 @@ class AppState(
     /** for work that should outlive the dialog or menu that started it */
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
+    /** the songs picked for doing something to several at once */
+    val selection = Selection()
+
     /** the dialog over the app (a [Sheet]), or null */
     var sheet by mutableStateOf<(@Composable () -> Unit)?>(null)
 

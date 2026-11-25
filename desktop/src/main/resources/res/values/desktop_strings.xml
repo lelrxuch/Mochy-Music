@@ -45,4 +45,9 @@
     <string name="desktop_delete_body">This can\'t be undone.</string>
     <string name="desktop_playlist_empty">Nothing here yet. Add songs from any song\'s menu.</string>
     <string name="desktop_unsave">Remove from library</string>
+    <string name="desktop_selected">%1$d selected</string>
+    <string name="desktop_select">Select</string>
+    <string name="desktop_like_all">Like all</string>
+    <string name="desktop_history_here">This computer</string>
+    <string name="desktop_history_account">YouTube Music</string>
 </resources>

@@ -44,4 +44,9 @@
     <string name="desktop_delete_body">No se puede deshacer.</string>
     <string name="desktop_playlist_empty">Todavía no hay nada. Añade canciones desde el menú de cualquier canción.</string>
     <string name="desktop_unsave">Quitar de la biblioteca</string>
+    <string name="desktop_selected">%1$d seleccionadas</string>
+    <string name="desktop_select">Seleccionar</string>
+    <string name="desktop_like_all">Me gusta a todas</string>
+    <string name="desktop_history_here">Este equipo</string>
+    <string name="desktop_history_account">YouTube Music</string>
 </resources>

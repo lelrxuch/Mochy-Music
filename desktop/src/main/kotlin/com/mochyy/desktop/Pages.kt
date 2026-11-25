@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -158,8 +159,9 @@ fun PlaylistScreen(id: String) {
                     }
                 }
         }
-        // one of yours on YouTube Music: it can be renamed, deleted and have songs taken out
+        // one of yours on YouTube Music: it can be renamed, deleted, reordered and have songs taken out
         val editable = playlist.isEditable && app.account.session != null
+        val drag = remember { DragReorder() }
         var title by remember(page) { mutableStateOf(playlist.title) }
         ScrollPage(list) {
             LazyColumn(state = list, contentPadding = PaddingValues(top = 56.dp, bottom = ChromeClearance)) {
@@ -194,9 +196,9 @@ fun PlaylistScreen(id: String) {
                 else itemsIndexed(songs, key = { i, song -> "$i-${song.id}" }) { i, song ->
                     SongRow(
                         song, onClick = { app.player.playList(songs, i, title) },
-                        modifier = Modifier.padding(horizontal = 12.dp),
+                        modifier = Modifier.reorderRow(drag, i, songs.size).padding(horizontal = 12.dp),
                         trailing = song.setVideoId?.let { setVideoId ->
-                            {
+                            { Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconAction(drawable("close"), str("remove_from_playlist"), {
                                     app.scope.launch {
                                         val removed = withContext(Dispatchers.IO) {
@@ -206,7 +208,26 @@ fun PlaylistScreen(id: String) {
                                         else app.player.message = str("desktop_action_failed")
                                     }
                                 }, size = 32.dp, iconSize = 16.dp, tint = Dim)
-                            }
+                                // dropped: YouTube is told which song now follows it
+                                Icon(
+                                    drawable("drag_handle"), null,
+                                    Modifier.padding(start = 4.dp).size(22.dp).dragHandle(drag, i, songs.size) { from, to ->
+                                        val moved = songs[from]
+                                        val reordered = songs.toMutableList().apply { add(to, removeAt(from)) }
+                                        songs = reordered
+                                        val successor = reordered.getOrNull(to + 1)?.setVideoId
+                                        moved.setVideoId?.let { movedId ->
+                                            app.scope.launch {
+                                                val ok = withContext(Dispatchers.IO) {
+                                                    signedIn { YouTube.moveSongPlaylist(playlist.id.removePrefix("VL"), movedId, successor) }
+                                                }
+                                                if (ok.isFailure) app.player.message = str("desktop_action_failed")
+                                            }
+                                        }
+                                    },
+                                    tint = Dim,
+                                )
+                            } }
                         },
                     )
                 }
@@ -300,6 +321,11 @@ enum class Shelf(val labelKey: String) { Liked("liked_songs"), History("history"
 fun LibraryScreen() {
     val app = LocalApp.current
     var shelf by remember { mutableStateOf(Shelf.Liked) }
+    // signed in, the history can be this computer's or the account's (what every device played)
+    var fromAccount by remember { mutableStateOf(true) }
+    val accountHistory = if (shelf == Shelf.History && fromAccount && app.account.session != null) {
+        rememberLoad("yt-history") { YouTube.musicHistory() }
+    } else null
     val data = app.library.data
     val list = rememberLazyListState()
     Column {
@@ -313,8 +339,24 @@ fun LibraryScreen() {
         Spacer(Modifier.height(8.dp))
         ScrollPage(list) {
             LazyColumn(state = list, contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = ChromeClearance)) {
-                when (shelf) {
+                if (shelf == Shelf.History && accountHistory != null) {
+                        item { HistorySourceChips(fromAccount) { fromAccount = it } }
+                        when (accountHistory) {
+                            is Load.Ready -> {
+                                val all = accountHistory.value.sections.orEmpty().flatMap { it.songs }
+                                accountHistory.value.sections.orEmpty().forEach { group ->
+                                    item { SectionHeader(group.title) }
+                                    itemsIndexed(group.songs, key = { i, song -> "yt-${group.title}-$i-${song.id}" }) { _, song ->
+                                        SongRow(song, onClick = { app.player.playList(all, all.indexOf(song).coerceAtLeast(0), str("history")) })
+                                    }
+                                }
+                            }
+                            is Load.Failed -> item { Text(str("desktop_cant_load"), Modifier.padding(24.dp), color = Dim) }
+                            Load.Loading -> {}
+                        }
+                } else when (shelf) {
                     Shelf.Liked, Shelf.History -> {
+                        if (shelf == Shelf.History && app.account.session != null) item { HistorySourceChips(fromAccount) { fromAccount = it } }
                         val songs = if (shelf == Shelf.Liked) data.liked else data.history
                         val title = str(shelf.labelKey)
                         if (songs.isEmpty()) item { EmptyShelf() } else item {
@@ -523,4 +565,11 @@ fun openLink(url: String) {
     // Desktop.browse needs GTK libs that aren't always there; xdg-open is what every Linux desktop has
     runCatching { ProcessBuilder("xdg-open", url).start() }
         .onFailure { runCatching { Desktop.getDesktop().browse(URI(url)) } }
+}
+
+@Composable
+private fun HistorySourceChips(fromAccount: Boolean, onPick: (Boolean) -> Unit) {
+    Box(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+        ChoiceChipsInline(listOf(false, true), fromAccount, { str(if (it) "desktop_history_account" else "desktop_history_here") }, onPick)
+    }
 }

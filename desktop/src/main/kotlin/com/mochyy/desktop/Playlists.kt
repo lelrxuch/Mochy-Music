@@ -65,6 +65,7 @@ import com.music.innertube.models.PlaylistItem
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.models.YTItem
+import com.music.innertube.utils.completed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -302,6 +303,15 @@ fun deleteOnlinePlaylist(app: AppState, playlist: PlaylistItem) {
     }
 }
 
+/** loads a whole album or playlist, then asks which playlist its songs go into */
+fun addAllToPlaylist(app: AppState, load: suspend () -> Result<List<SongItem>>) {
+    app.scope.launch {
+        val songs = withContext(Dispatchers.IO) { signedIn(load) }.getOrNull()
+        if (songs.isNullOrEmpty()) app.player.message = str("desktop_action_failed")
+        else app.showSheet { AddToPlaylistSheet(songs) }
+    }
+}
+
 fun copyLink(app: AppState, link: String) {
     runCatching { Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(link), null) }
         .onSuccess { app.player.message = str("link_copied") }
@@ -311,11 +321,15 @@ fun copyLink(app: AppState, link: String) {
 fun itemActions(app: AppState, item: YTItem): List<Pair<String, () -> Unit>> = buildList {
     when (item) {
         is SongItem -> return songActions(app, item)
-        is AlbumItem -> add(str("play") to { app.player.playEndpoint(WatchEndpoint(playlistId = item.playlistId), item.title) })
+        is AlbumItem -> {
+            add(str("play") to { app.player.playEndpoint(WatchEndpoint(playlistId = item.playlistId), item.title) })
+            add(str("add_to_playlist") to { addAllToPlaylist(app) { YouTube.album(item.browseId).map { it.songs } } })
+        }
         is PlaylistItem -> {
             add(str("play") to { app.player.playEndpoint(item.playEndpoint ?: WatchEndpoint(playlistId = item.id.removePrefix("VL")), item.title) })
             item.shuffleEndpoint?.let { add(str("shuffle") to { app.player.playEndpoint(it, item.title) }) }
             item.radioEndpoint?.let { add(str("start_radio") to { app.player.playEndpoint(it, item.title) }) }
+            add(str("add_to_playlist") to { addAllToPlaylist(app) { YouTube.playlist(item.id).completed().map { it.songs } } })
         }
         is ArtistItem -> {
             item.shuffleEndpoint?.let { add(str("shuffle") to { app.player.playEndpoint(it, item.title) }) }
@@ -340,6 +354,7 @@ fun LocalPlaylistScreen(id: String) {
     }
     val songs = playlist.songs
     val list = rememberLazyListState()
+    val drag = remember { DragReorder() }
     ScrollPage(list) {
         LazyColumn(state = list, contentPadding = PaddingValues(top = 56.dp, bottom = ChromeClearance)) {
             item(key = "header") {
@@ -372,9 +387,16 @@ fun LocalPlaylistScreen(id: String) {
             itemsIndexed(songs, key = { i, song -> "$i-${song.id}" }) { i, song ->
                 SongRow(
                     song, onClick = { app.player.playList(songs, i, playlist.name) },
-                    modifier = Modifier.padding(horizontal = 12.dp),
+                    modifier = Modifier.reorderRow(drag, i, songs.size).padding(horizontal = 12.dp),
                     trailing = {
-                        IconAction(drawable("close"), str("remove_from_playlist"), { app.library.removeFromPlaylist(id, i) }, size = 32.dp, iconSize = 16.dp, tint = Dim)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconAction(drawable("close"), str("remove_from_playlist"), { app.library.removeFromPlaylist(id, i) }, size = 32.dp, iconSize = 16.dp, tint = Dim)
+                            Icon(
+                                drawable("drag_handle"), null,
+                                Modifier.padding(start = 4.dp).size(22.dp).dragHandle(drag, i, songs.size) { from, to -> app.library.moveInPlaylist(id, from, to) },
+                                tint = Dim,
+                            )
+                        }
                     },
                 )
             }

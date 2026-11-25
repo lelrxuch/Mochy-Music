@@ -102,10 +102,19 @@ fun main() {
 
 /** keys that work anywhere a text field isn't taking them: space plays and pauses, Esc and Alt+← go back */
 private fun shortcut(app: AppState, event: KeyEvent): Boolean {
+    // Ctrl or Shift held turns a click on a song into picking it
+    if (event.key in listOf(Key.CtrlLeft, Key.CtrlRight, Key.ShiftLeft, Key.ShiftRight)) {
+        app.selection.extending = event.type == KeyEventType.KeyDown
+        return false
+    }
     if (event.type != KeyEventType.KeyDown) return false
     when {
         event.key == Key.Spacebar -> app.player.togglePause()
-        event.key == Key.Escape -> if (app.sheet != null) app.closeSheet() else app.nav.back()
+        event.key == Key.Escape -> when {
+            app.sheet != null -> app.closeSheet()
+            app.selection.active -> app.selection.clear()
+            else -> app.nav.back()
+        }
         event.isAltPressed && event.key == Key.DirectionLeft -> app.nav.back()
         event.isCtrlPressed && event.key == Key.DirectionRight -> app.player.next()
         event.isCtrlPressed && event.key == Key.DirectionLeft -> app.player.previous()
@@ -132,6 +141,8 @@ private fun Shell() {
             .onPointerEvent(PointerEventType.Press) { if (it.button == PointerButton.Back) nav.back() },
     ) {
         val route = nav.top
+        // what was picked on one page doesn't carry to the next
+        LaunchedEffect(route, nav.tab) { app.selection.clear() }
         // the pages are what the floating glass shows, bent and blurred
         Box(Modifier.fillMaxSize().background(Color.Black).glassSource(backdrop)) { pages.SaveableStateProvider(route?.toString() ?: nav.tab.name) {
             // each page keeps its own record of what already played its entrance
@@ -169,6 +180,9 @@ private fun Shell() {
                     Modifier.fillMaxWidth().chromeGlass(RoundedCornerShape(20.dp)).padding(horizontal = 18.dp, vertical = 12.dp),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+            }
+            AnimatedVisibility(app.selection.active, enter = fadeIn(tween(160)) + scaleIn(spring(dampingRatio = 0.8f, stiffness = 420f), initialScale = 0.9f), exit = fadeOut(tween(120))) {
+                SelectionBar(Modifier.fillMaxWidth())
             }
             // hidden while the player is open, so its cover can fly up into the player's and back
             AnimatedVisibility(!nav.playerOpen, enter = fadeIn(tween(220)), exit = fadeOut(tween(120))) {

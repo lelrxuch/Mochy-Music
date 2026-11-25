@@ -91,6 +91,7 @@ fun songActions(app: AppState, song: SongItem): List<Pair<String, () -> Unit>> =
     add(str("play_next") to { app.player.playNext(song) })
     add(str("add_to_queue") to { app.player.addToQueue(song) })
     add(str("add_to_playlist") to { app.showSheet { AddToPlaylistSheet(listOf(song)) } })
+    add(str("desktop_select") to { app.selection.toggle(song) })
     add(str("start_radio") to { app.player.playSong(song) })
     add((if (app.library.isLiked(song.id)) str("desktop_unlike") else str("like")) to { app.library.toggleLike(song) })
     song.artists.firstOrNull { it.id != null }?.let { artist -> add(str("view_artist") to { app.nav.open(Route.Artist(artist.id!!)) }) }
@@ -109,9 +110,12 @@ fun SongRow(
     val app = LocalApp.current
     val playing = app.player.current?.id == song.id
     ContextMenuArea(items = { songActions(app, song).map { (label, action) -> ContextMenuItem(label, action) } }) {
+        val selected = app.selection.isSelected(song.id)
         Row(
-            modifier.revealOnAppear("song:${song.id}").fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick)
-                .background(if (playing) Color.White.copy(alpha = 0.08f) else Color.Transparent)
+            // while songs are being picked (or Ctrl/Shift is held) a click picks instead of playing
+            modifier.revealOnAppear("song:${song.id}").fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                .clickable { if (app.selection.active || app.selection.extending) app.selection.toggle(song) else onClick() }
+                .background(if (selected) Color.White.copy(alpha = 0.14f) else if (playing) Color.White.copy(alpha = 0.08f) else Color.Transparent)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -119,7 +123,14 @@ fun SongRow(
                 Text("$number", Modifier.width(32.dp), color = Dim, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.width(8.dp))
             } else {
-                Artwork(song.thumbnail, Modifier.size(48.dp), RoundedCornerShape(10.dp), size = 120)
+                Box(contentAlignment = Alignment.Center) {
+                    Artwork(song.thumbnail, Modifier.size(48.dp), RoundedCornerShape(10.dp), size = 120)
+                    if (selected) {
+                        Box(Modifier.size(48.dp).clip(RoundedCornerShape(10.dp)).background(Color.Black.copy(alpha = 0.55f)), contentAlignment = Alignment.Center) {
+                            Icon(drawable("check"), null, Modifier.size(22.dp), tint = Color.White)
+                        }
+                    }
+                }
                 Spacer(Modifier.width(12.dp))
             }
             Column(Modifier.weight(1f)) {
