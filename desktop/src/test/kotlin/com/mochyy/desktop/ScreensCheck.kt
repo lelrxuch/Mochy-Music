@@ -37,7 +37,7 @@ class ScreensCheck {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         val library = LibraryStore(File(work, "library.json"))
         val account = AccountStore(File(work, "account.json"))
-        val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account))
+        val app = AppState(Nav(), Player(scope, library, File(work, "queue.json")), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account))
 
         fun shot(name: String, seconds: Int = 6) {
             val scene = ImageComposeScene(1280, 840, Density(1f)) {

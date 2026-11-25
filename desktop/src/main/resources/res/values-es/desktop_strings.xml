@@ -50,4 +50,6 @@
     <string name="desktop_history_here">Este equipo</string>
     <string name="desktop_history_account">YouTube Music</string>
     <string name="desktop_needs_ytdlp">Esta canción necesita yt-dlp. Instálalo con: sudo dnf install yt-dlp</string>
+    <string name="desktop_sleep_until">Se pausa a las %1$s</string>
+    <string name="desktop_minutes">%1$d min</string>
 </resources>

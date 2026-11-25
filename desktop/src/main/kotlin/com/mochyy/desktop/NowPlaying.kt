@@ -13,6 +13,10 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.math.PI
+import java.time.format.FormatStyle
+import java.time.format.DateTimeFormatter
+import java.time.ZoneId
+import java.time.Instant
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -255,6 +259,10 @@ private fun PanelToggles(panel: Panel?, onPanel: (Panel) -> Unit) {
         listOf(Panel.Lyrics to "lyrics", Panel.Queue to "queue_music").forEach { (kind, icon) ->
             IconAction(drawable(icon), str(if (kind == Panel.Lyrics) "lyrics" else "queue"), { onPanel(kind) }, tint = if (panel == kind) Color.White else Dim)
         }
+        // the sleep timer, lit while one is set
+        val app = LocalApp.current
+        val sleeping = app.player.sleepAt != null || app.player.sleepAtSongEnd
+        IconAction(drawable("bedtime"), str("sleep_timer"), { app.showSheet { SleepTimerSheet() } }, tint = if (sleeping) Color.White else Dim)
     }
 }
 
@@ -365,5 +373,32 @@ private fun QueuePanel() {
 private fun Notice(text: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text, color = Dim, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+/** the sleep timer's choices (the app's sleep timer sheet, its quick presets) */
+@Composable
+private fun SleepTimerSheet() {
+    val app = LocalApp.current
+    val player = app.player
+    Sheet(str("sleep_timer")) {
+        val at = player.sleepAt
+        if (player.sleepAtSongEnd || at != null) {
+            val text = if (player.sleepAtSongEnd) str("sleep_timer_until_song_ends")
+            else str("desktop_sleep_until", DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).format(Instant.ofEpochMilli(at!!).atZone(ZoneId.systemDefault())))
+            Text(text, color = Dim, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(14.dp))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(15, 30, 45).forEach { minutes ->
+                PillButton(str("desktop_minutes", minutes), { player.sleepIn(minutes); app.closeSheet() }, light = false)
+            }
+            PillButton(str("sleep_timer_preset_hour"), { player.sleepIn(60); app.closeSheet() }, light = false)
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PillButton(str("end_of_song"), { player.sleepAfterThisSong(); app.closeSheet() }, light = false)
+            if (player.sleepAtSongEnd || at != null) PillButton(str("cancel"), { player.cancelSleep(); app.closeSheet() })
+        }
     }
 }

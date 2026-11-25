@@ -9,8 +9,12 @@ import com.music.innertube.models.WatchEndpoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import java.io.File
 import java.util.Locale
 
 /** "OPUS · 48,0 kHz", the badge the player shows beside the title */
@@ -25,7 +29,17 @@ fun SongItem.artistNames() = artists.joinToString { it.name }
 enum class Repeat { OFF, ALL, ONE }
 
 /** The queue and what's playing, what the Android app's MusicService does, with mpv as the engine. */
-class Player(private val scope: CoroutineScope, private val library: LibraryStore) {
+/** the queue as it was when the app closed (playback/queues): picked up again, paused, at the same second */
+@Serializable
+private data class SavedQueue(val songs: List<SongItem>, val index: Int, val position: Double, val title: String? = null)
+
+private val queueJson = Json { ignoreUnknownKeys = true }
+
+class Player(
+    private val scope: CoroutineScope,
+    private val library: LibraryStore,
+    private val queueFile: File = dataFile("queue.json"),
+) {
     var queue by mutableStateOf(emptyList<SongItem>())
         private set
     var index by mutableStateOf(-1)
@@ -54,6 +68,18 @@ class Player(private val scope: CoroutineScope, private val library: LibraryStor
     private var lyricsJob: Job? = null
     private var loadingMore = false
 
+    // where to start the song restored from last time, once mpv has loaded it
+    private var pendingSeek = 0.0
+
+    /** when the sleep timer pauses, as epoch millis, or null */
+    var sleepAt by mutableStateOf<Long?>(null)
+        private set
+
+    /** the sleep timer stops at the end of this song instead */
+    var sleepAtSongEnd by mutableStateOf(false)
+        private set
+    private var sleepJob: Job? = null
+
     val mpv: Mpv? = runCatching {
         Mpv { reason ->
             scope.launch {
@@ -61,6 +87,21 @@ class Player(private val scope: CoroutineScope, private val library: LibraryStor
             }
         }
     }.getOrNull()?.also { it.setVolume(library.data.volume) }
+
+    init {
+        restoreQueue()
+        // the restored song starts where it was left, once mpv knows how long it is
+        mpv?.let { player ->
+            scope.launch {
+                player.duration.collect { length ->
+                    if (length > 0 && pendingSeek > 0) {
+                        player.seek(pendingSeek.coerceAtMost(length - 1))
+                        pendingSeek = 0.0
+                    }
+                }
+            }
+        }
+    }
 
     /** one song: it plays at once and its radio fills the queue behind it, like the app */
     fun playSong(song: SongItem) {
@@ -138,7 +179,7 @@ class Player(private val scope: CoroutineScope, private val library: LibraryStor
     fun togglePause() {
         val player = mpv ?: return
         // after a failed load there's nothing in mpv to unpause, so the song is asked for again
-        if (player.duration.value <= 0.0 && current != null && !loading) startAt(index) else player.togglePause()
+        if (player.duration.value <= 0.0 && current != null && !loading) startAt(index, keepSeek = true) else player.togglePause()
     }
 
     fun seek(seconds: Double) = mpv?.seek(seconds)
@@ -168,7 +209,64 @@ class Player(private val scope: CoroutineScope, private val library: LibraryStor
         shuffled = !shuffled
     }
 
-    fun close() = mpv?.close()
+    // ---- sleep timer (playback/SleepTimer.kt) ----
+
+    fun sleepIn(minutes: Int) {
+        cancelSleep()
+        sleepAt = System.currentTimeMillis() + minutes * 60_000L
+        sleepJob = scope.launch {
+            delay(minutes * 60_000L)
+            pause()
+            sleepAt = null
+        }
+    }
+
+    fun sleepAfterThisSong() {
+        cancelSleep()
+        sleepAtSongEnd = true
+    }
+
+    fun cancelSleep() {
+        sleepJob?.cancel()
+        sleepAt = null
+        sleepAtSongEnd = false
+    }
+
+    private fun pause() {
+        val player = mpv ?: return
+        if (!player.paused.value) player.togglePause()
+    }
+
+    fun close() {
+        saveQueue(mpv?.position?.value ?: 0.0, now = true)
+        mpv?.close()
+    }
+
+    // ---- the queue across restarts ----
+
+    private fun restoreQueue() {
+        val saved = runCatching { queueJson.decodeFromString<SavedQueue>(queueFile.readText()) }.getOrNull() ?: return
+        if (saved.songs.isEmpty()) return
+        queue = saved.songs
+        index = saved.index.coerceIn(saved.songs.indices)
+        queueTitle = saved.title
+        pendingSeek = saved.position
+        // nothing is loaded yet, so it shows as paused until play is pressed
+        mpv?.togglePause()
+    }
+
+    private fun saveQueue(position: Double, now: Boolean = false) {
+        // the songs around the current one, enough to come back to
+        val from = (index - 50).coerceAtLeast(0)
+        val saved = SavedQueue(queue.drop(from).take(300), index - from, position, queueTitle)
+        val write = {
+            runCatching {
+                queueFile.parentFile.mkdirs()
+                queueFile.writeText(queueJson.encodeToString(SavedQueue.serializer(), saved))
+            }
+        }
+        if (now) write() else scope.launch(Dispatchers.IO) { write() }
+    }
 
     private fun resetQueue(songs: List<SongItem>, start: Int, title: String?) {
         queueJob?.cancel()
@@ -180,9 +278,11 @@ class Player(private val scope: CoroutineScope, private val library: LibraryStor
         startAt(start)
     }
 
-    private fun startAt(position: Int) {
+    private fun startAt(position: Int, keepSeek: Boolean = false) {
         val song = queue.getOrNull(position) ?: return
         index = position
+        if (!keepSeek) pendingSeek = 0.0
+        saveQueue(pendingSeek)
         val player = mpv ?: run {
             message = str("desktop_mpv_missing")
             return
@@ -210,6 +310,11 @@ class Player(private val scope: CoroutineScope, private val library: LibraryStor
     }
 
     private fun onTrackEnd() {
+        // the sleep timer was set to the end of this song
+        if (sleepAtSongEnd) {
+            sleepAtSongEnd = false
+            return
+        }
         when {
             repeat == Repeat.ONE -> startAt(index)
             index + 1 < queue.size -> startAt(index + 1)
