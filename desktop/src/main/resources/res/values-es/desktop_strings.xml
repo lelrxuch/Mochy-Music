@@ -56,4 +56,12 @@
     <string name="desktop_report_body">Lo que escuchas en Mochy aparece en el historial de tu cuenta y mejora sus recomendaciones, como en la app de YouTube.</string>
     <string name="desktop_on">Activado</string>
     <string name="desktop_off">Desactivado</string>
+    <string name="desktop_downloads">Descargas</string>
+    <string name="desktop_download">Descargar</string>
+    <string name="desktop_download_all">Descargar todo</string>
+    <string name="desktop_downloading">Descargando %1$d…</string>
+    <string name="desktop_downloaded">Descargada: %1$s</string>
+    <string name="desktop_download_failed">No se pudo descargar %1$s</string>
+    <string name="desktop_downloads_empty">Las canciones que descargues suenan aquí sin conexión. Descarga desde el menú de cualquier canción.</string>
+    <string name="desktop_normalize_body">Iguala el volumen entre canciones fuertes y suaves, con la medida que YouTube hace de cada una</string>
 </resources>

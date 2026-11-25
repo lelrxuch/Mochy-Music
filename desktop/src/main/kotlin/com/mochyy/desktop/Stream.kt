@@ -15,7 +15,7 @@ import java.nio.file.attribute.PosixFilePermissions
  * Where a song's audio comes from: a link mpv can play, the user agent googlevideo expects with it,
  * and which client found it. [viaYtDlp] means mpv hands the watch page to yt-dlp instead.
  */
-data class Stream(val url: String, val userAgent: String?, val source: String) {
+data class Stream(val url: String, val userAgent: String?, val source: String, val loudnessDb: Double? = null) {
     val viaYtDlp get() = source == YT_DLP
 }
 
@@ -68,7 +68,8 @@ internal suspend fun visionos(videoId: String, high: Boolean): Stream? {
         .sortedBy { if (high) -it.bitrate else it.bitrate }
     // one try per client: a link refused for one format is refused for all of them
     val url = formats.firstOrNull()?.url ?: return null
-    return Stream(url, client.userAgent, client.clientName).takeIf { answers(url, client.userAgent) }
+    val loudness = response?.playerConfig?.audioConfig?.let { it.loudnessDb ?: it.perceptualLoudnessDb }
+    return Stream(url, client.userAgent, client.clientName, loudness).takeIf { answers(url, client.userAgent) }
 }
 
 internal suspend fun signed(videoId: String, client: YouTubeClient, high: Boolean): Stream? {
@@ -80,7 +81,8 @@ internal suspend fun signed(videoId: String, client: YouTubeClient, high: Boolea
         .sortedBy { if (high) -it.bitrate else it.bitrate }
     // the first format NewPipe can unsign, then one try: a refusal holds for the whole client
     val url = formats.firstNotNullOfOrNull { NewPipeExtractor.getStreamUrl(it, videoId) } ?: return null
-    return Stream(url, client.userAgent, client.clientName).takeIf { answers(url, client.userAgent) }
+    val loudness = response.playerConfig?.audioConfig?.let { it.loudnessDb ?: it.perceptualLoudnessDb }
+    return Stream(url, client.userAgent, client.clientName, loudness).takeIf { answers(url, client.userAgent) }
 }
 
 internal fun newPipe(videoId: String, high: Boolean): Stream? {

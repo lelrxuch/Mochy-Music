@@ -312,6 +312,13 @@ fun addAllToPlaylist(app: AppState, load: suspend () -> Result<List<SongItem>>) 
     }
 }
 
+fun downloadAll(app: AppState, load: suspend () -> Result<List<SongItem>>) {
+    app.scope.launch {
+        val songs = withContext(Dispatchers.IO) { signedIn(load) }.getOrNull()
+        if (songs.isNullOrEmpty()) app.player.message = str("desktop_action_failed") else app.player.downloads.download(songs)
+    }
+}
+
 fun copyLink(app: AppState, link: String) {
     runCatching { Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(link), null) }
         .onSuccess { app.player.message = str("link_copied") }
@@ -324,12 +331,14 @@ fun itemActions(app: AppState, item: YTItem): List<Pair<String, () -> Unit>> = b
         is AlbumItem -> {
             add(str("play") to { app.player.playEndpoint(WatchEndpoint(playlistId = item.playlistId), item.title) })
             add(str("add_to_playlist") to { addAllToPlaylist(app) { YouTube.album(item.browseId).map { it.songs } } })
+            add(str("desktop_download_all") to { downloadAll(app) { YouTube.album(item.browseId).map { it.songs } } })
         }
         is PlaylistItem -> {
             add(str("play") to { app.player.playEndpoint(item.playEndpoint ?: WatchEndpoint(playlistId = item.id.removePrefix("VL")), item.title) })
             item.shuffleEndpoint?.let { add(str("shuffle") to { app.player.playEndpoint(it, item.title) }) }
             item.radioEndpoint?.let { add(str("start_radio") to { app.player.playEndpoint(it, item.title) }) }
             add(str("add_to_playlist") to { addAllToPlaylist(app) { YouTube.playlist(item.id).completed().map { it.songs } } })
+            add(str("desktop_download_all") to { downloadAll(app) { YouTube.playlist(item.id).completed().map { it.songs } } })
         }
         is ArtistItem -> {
             item.shuffleEndpoint?.let { add(str("shuffle") to { app.player.playEndpoint(it, item.title) }) }

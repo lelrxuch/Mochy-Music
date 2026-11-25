@@ -27,6 +27,8 @@ data class LibraryData(
     val pending: List<PendingChange> = emptyList(),
     val localPlaylists: List<LocalPlaylist> = emptyList(),
     val reportPlays: Boolean = true,
+    val normalize: Boolean = true,
+    val downloads: List<DownloadedSong> = emptyList(),
 )
 
 /** a playlist kept on this computer only, for when there's no YouTube account (the app's local playlists) */
@@ -148,6 +150,12 @@ class LibraryStore(private val file: File = defaultFile()) {
     fun setHighQuality(high: Boolean) = update { copy(highQuality = high) }
 
     fun setReportPlays(report: Boolean) = update { copy(reportPlays = report) }
+
+    fun setNormalize(normalize: Boolean) = update { copy(normalize = normalize) }
+
+    fun addDownload(song: DownloadedSong) = update { copy(downloads = listOf(song) + downloads.filterNot { it.song.id == song.song.id }) }
+
+    fun removeDownload(id: String) = update { copy(downloads = downloads.filterNot { it.song.id == id }) }
 
     private fun update(change: LibraryData.() -> LibraryData) {
         data = data.change()

@@ -96,6 +96,8 @@ fun songActions(app: AppState, song: SongItem): List<Pair<String, () -> Unit>> =
     add((if (app.library.isLiked(song.id)) str("desktop_unlike") else str("like")) to { app.library.toggleLike(song) })
     song.artists.firstOrNull { it.id != null }?.let { artist -> add(str("view_artist") to { app.nav.open(Route.Artist(artist.id!!)) }) }
     song.album?.let { album -> add(str("view_album") to { app.nav.open(Route.Album(album.id)) }) }
+    if (app.player.downloads.isDownloaded(song.id)) add(str("remove_download") to { app.player.downloads.remove(song) })
+    else add(str("desktop_download") to { app.player.downloads.download(listOf(song)) })
     add(str("copy_link") to { copyLink(app, song.shareLink) })
 }
 

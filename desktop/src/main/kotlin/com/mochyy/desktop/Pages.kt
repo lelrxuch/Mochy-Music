@@ -315,7 +315,7 @@ private fun AboutCard(title: String, text: String) {
 
 // ---- library (ui/screens/library) ----
 
-enum class Shelf(val labelKey: String) { Liked("liked_songs"), History("history"), Albums("filter_albums"), Artists("filter_artists"), Playlists("playlists") }
+enum class Shelf(val labelKey: String) { Liked("liked_songs"), History("history"), Albums("filter_albums"), Artists("filter_artists"), Playlists("playlists"), Downloads("desktop_downloads") }
 
 @Composable
 fun LibraryScreen() {
@@ -355,6 +355,23 @@ fun LibraryScreen() {
                             Load.Loading -> {}
                         }
                 } else when (shelf) {
+                    Shelf.Downloads -> {
+                        val songs = data.downloads.map { it.song }
+                        val busy = app.player.downloads.progress
+                        if (busy.isNotEmpty()) item {
+                            Text(str("desktop_downloading", busy.size), Modifier.padding(horizontal = 24.dp, vertical = 8.dp), color = Dim, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        if (songs.isEmpty() && busy.isEmpty()) item { Text(str("desktop_downloads_empty"), Modifier.padding(16.dp), color = Dim, style = MaterialTheme.typography.bodyLarge) }
+                        else if (songs.isNotEmpty()) item {
+                            Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                PillButton(str("play"), { app.player.playList(songs, 0, str("desktop_downloads")) }, drawable("transport_play"))
+                                PillButton(str("shuffle"), { app.player.playList(songs, 0, str("desktop_downloads"), shuffle = true) }, drawable("shuffle"), light = false)
+                            }
+                        }
+                        itemsIndexed(songs, key = { _, song -> "dl-${song.id}" }) { i, song ->
+                            SongRow(song, onClick = { app.player.playList(songs, i, str("desktop_downloads")) })
+                        }
+                    }
                     Shelf.Liked, Shelf.History -> {
                         if (shelf == Shelf.History && app.account.session != null) item { HistorySourceChips(fromAccount) { fromAccount = it } }
                         val songs = if (shelf == Shelf.Liked) data.liked else data.history
@@ -415,6 +432,11 @@ fun SettingsScreen() {
                     SettingsCard(str("desktop_report_title"), str("desktop_report_body")) {
                         ChoiceChipsInline(listOf(true, false), app.library.data.reportPlays, { str(if (it) "desktop_on" else "desktop_off") }, app.library::setReportPlays)
                     }
+                }
+            }
+            item {
+                SettingsCard(str("audio_normalization"), str("desktop_normalize_body")) {
+                    ChoiceChipsInline(listOf(true, false), app.library.data.normalize, { str(if (it) "desktop_on" else "desktop_off") }, app.library::setNormalize)
                 }
             }
             item {

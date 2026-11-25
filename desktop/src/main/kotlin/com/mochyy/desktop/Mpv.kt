@@ -54,7 +54,9 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
         send("observe_property", 6, "audio-params/samplerate")
     }
 
-    fun play(url: String, title: String, userAgent: String?, cookies: File? = null) {
+    fun play(url: String, title: String, userAgent: String?, cookies: File? = null, gainDb: Double = 0.0) {
+        // evens out loud and quiet songs (the app's loudness enhancer); 0 when normalising is off
+        send("set_property", "volume-gain", gainDb)
         send("set_property", "force-media-title", title)
         // googlevideo checks links against the client that asked for them
         send("set_property", "user-agent", userAgent ?: DEFAULT_USER_AGENT)

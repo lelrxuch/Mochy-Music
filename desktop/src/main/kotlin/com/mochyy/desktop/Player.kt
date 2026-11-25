@@ -40,6 +40,9 @@ class Player(
     private val library: LibraryStore,
     private val queueFile: File = dataFile("queue.json"),
 ) {
+    /** songs kept on this computer; they play from disk, no connection needed */
+    val downloads = Downloads(scope, library).also { it.onNotice = { text -> message = text } }
+
     var queue by mutableStateOf(emptyList<SongItem>())
         private set
     var index by mutableStateOf(-1)
@@ -304,14 +307,22 @@ class Player(
         player.stop()
         streamJob?.cancel()
         streamJob = scope.launch {
-            val stream = withContext(Dispatchers.IO) { runCatching { findStream(song.id, library.data.highQuality) } }
+            // a downloaded song plays from disk, with the loudness kept from when it was fetched
+            val kept = library.data.downloads.firstOrNull { it.song.id == song.id }?.takeIf { downloads.file(song.id).isFile }
+            val stream = if (kept != null) {
+                Result.success(Stream(downloads.file(song.id).path, null, "download", kept.loudnessDb))
+            } else {
+                withContext(Dispatchers.IO) { runCatching { findStream(song.id, library.data.highQuality) } }
+            }
             stream.onSuccess {
                 if (it.viaYtDlp && !hasYtDlp) {
                     message = str("desktop_needs_ytdlp")
                 } else {
                     // yt-dlp gets the session's cookies, so songs that need a signed-in account play too
                     val cookies = if (it.viaYtDlp) withContext(Dispatchers.IO) { ytDlpCookies() } else null
-                    player.play(it.url, "${song.title} - ${song.artistNames()}", it.userAgent, cookies)
+                    // Android's rule: the gain is minus the measured loudness, between -15 and +3 dB
+                    val gain = if (library.data.normalize) (-(it.loudnessDb ?: 0.0)).coerceIn(-15.0, 3.0) else 0.0
+                    player.play(it.url, "${song.title} - ${song.artistNames()}", it.userAgent, cookies, gain)
                     reporter.enabled = library.data.reportPlays
                     reporter.onSongStart(song.id, (song.duration ?: 0) * 1000L)
                 }
