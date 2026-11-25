@@ -31,18 +31,15 @@ Android: `ui/component/GlassKit.kt`, `FrostedGlass.kt`, `ProgressiveBlur.kt`, `A
 - Reproductor flagship completo: fondo ambiental con los colores de la carátula, carátula
   desenfocada, reflejo, letras con brillo y escalonado, puntos de interludio.
 
-## Fase 2: biblioteca, playlists y menús — en curso
-Hecho: playlists de tu cuenta editables (crear, renombrar, borrar, añadir y quitar canciones) y
-playlists locales sin cuenta; "añadir a playlist"; menús de canción, álbum, artista y playlist;
-diálogos de la app en vidrio; Explorar (listas de éxitos, ánimos y géneros, novedades).
-Pendiente: selección múltiple, reordenar canciones arrastrando, añadir un álbum entero a una playlist,
-historial de YouTube.
-Android: `ui/menu/`, `ui/screens/library/`, `ui/screens/playlist/`, `ExploreScreen`, `SectionDetailScreen`.
-- Crear, editar, ordenar y borrar playlists (locales y de YouTube); añadir a playlist.
-- Menús completos de canción, álbum, artista y playlist; selección múltiple.
-- Explorar: ánimos y géneros, listas, novedades; secciones "ver todo"; historial completo.
+## Fase 2: biblioteca, playlists y menús — hecha
+Playlists de tu cuenta editables y locales, añadir a playlist (canciones, álbumes y playlists enteras),
+reordenar arrastrando, selección múltiple, menús completos, diálogos en vidrio, Explorar e historial de
+tu cuenta.
 
-## Fase 3: reproducción
+## Fase 3: reproducción — en curso
+Hecho: clientes de respaldo (VISIONOS, TV y WEB_REMIX con NewPipe, extractor de NewPipe, yt-dlp con
+tus cookies), temporizador de sueño, la cola sobrevive al cierre.
+Pendiente: reportar escuchas al historial de YouTube, descargas y caché, crossmix y normalización.
 Android: `playback/`, `utils/YTPlayerUtils`, `crossmix/`.
 - Clientes de respaldo para canciones que YouTube rechaza.
 - Temporizador de sueño, cola que sobrevive al cierre, reporte de escuchas al historial de YouTube.
