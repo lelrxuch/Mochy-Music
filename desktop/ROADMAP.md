@@ -38,8 +38,9 @@ tu cuenta.
 
 ## Fase 3: reproducción — en curso
 Hecho: clientes de respaldo (VISIONOS, TV y WEB_REMIX con NewPipe, extractor de NewPipe, yt-dlp con
-tus cookies), temporizador de sueño, la cola sobrevive al cierre.
-Pendiente: reportar escuchas al historial de YouTube, descargas y caché, crossmix y normalización.
+tus cookies), temporizador de sueño, la cola sobrevive al cierre, escuchas al historial de YouTube,
+descargas para escuchar sin conexión, normalización de volumen.
+Pendiente: crossmix (fundidos entre canciones, con dos mpv).
 Android: `playback/`, `utils/YTPlayerUtils`, `crossmix/`.
 - Clientes de respaldo para canciones que YouTube rechaza.
 - Temporizador de sueño, cola que sobrevive al cierre, reporte de escuchas al historial de YouTube.
