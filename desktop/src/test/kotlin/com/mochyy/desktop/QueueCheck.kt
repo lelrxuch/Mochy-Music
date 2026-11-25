@@ -27,7 +27,7 @@ class QueueCheck {
             assertEquals("Road trip", player.queueTitle)
             player.close()
             // closing writes it back, still on the same song
-            assertEquals(true, file.readText().contains("\\"index\\":1"))
+            assertEquals(true, file.readText().contains("\"index\":1"))
         } finally {
             dir.deleteRecursively()
         }
