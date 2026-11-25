@@ -96,6 +96,9 @@ class ScreensCheck {
         }
         app.nav.select(Tab.Settings)
         shot("7-settings", 3)
+        library.setAudioLab(AudioLabSettings(eqEnabled = true, presetId = "rock", gains = EqPresets.first { it.id == "rock" }.gains, reverb = Reverb.Hall))
+        app.nav.open(Route.AudioLab)
+        shot("8-audiolab", 3)
         app.player.close()
         work.deleteRecursively()
     }
