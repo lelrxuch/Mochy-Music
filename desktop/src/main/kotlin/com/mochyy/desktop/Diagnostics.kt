@@ -75,13 +75,9 @@ suspend fun runDiagnostics(app: AppState, onCheck: (Check) -> Unit) = withContex
         }
         onCheck(Check("NewPipe", newPipe(song.id, true) != null))
         if (hasYtDlp) {
-            val cookies = ytDlpCookies()
-            val (code, out) = run(
-                listOf("yt-dlp", "-g", "-f", "bestaudio/best", "--no-warnings") +
-                    (cookies?.let { listOf("--cookies", it.path) } ?: emptyList()) + "https://music.youtube.com/watch?v=${song.id}",
-                60,
-            )
-            onCheck(Check("yt-dlp", code == 0 && "googlevideo" in out, if (code == 0) "" else out.lines().lastOrNull { it.isNotBlank() }.orEmpty().take(120)))
+            val (_, version) = run(listOf("yt-dlp", "--version"), 10)
+            onCheck(Check("yt-dlp", ytDlp(song.id, cookies = false) != null, version.trim()))
+            onCheck(Check("yt-dlp + cookies", if (YouTube.cookie == null) null else ytDlp(song.id, cookies = true) != null))
         } else {
             onCheck(Check("yt-dlp", false, "sudo dnf install yt-dlp"))
         }

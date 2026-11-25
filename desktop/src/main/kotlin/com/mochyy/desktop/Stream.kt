@@ -4,6 +4,10 @@ import com.music.innertube.NewPipeExtractor
 import com.music.innertube.YouTube
 import com.music.innertube.models.YouTubeClient
 import com.music.innertube.utils.parseCookieString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
@@ -19,7 +23,7 @@ data class Stream(val url: String, val userAgent: String?, val source: String, v
     val viaYtDlp get() = source == YT_DLP
 }
 
-private const val YT_DLP = "yt-dlp"
+private const val YT_DLP = "yt-dlp via mpv"
 
 // the TV clients play what's age-restricted for a web page; their links are signed, which
 // NewPipe undoes. IOS, IPADOS and the ANDROID_VR clients are left out on purpose: without a
@@ -47,7 +51,31 @@ suspend fun findStream(videoId: String, high: Boolean = true): Stream {
         signed(videoId, client, high)?.let { return it }
     }
     newPipe(videoId, high)?.let { return it }
+    // yt-dlp: signed out it picks the clients that hand out audio without a PoToken, so that goes
+    // first; the session's cookies only when that fails (they switch it to web clients that need one)
+    ytDlp(videoId, cookies = false)?.let { return it }
+    if (YouTube.cookie != null) ytDlp(videoId, cookies = true)?.let { return it }
     return Stream("https://music.youtube.com/watch?v=$videoId", null, YT_DLP)
+}
+
+/**
+ * yt-dlp asked for the audio link itself (-j), with the headers that link wants, so it's checked
+ * like every other link and plays (or downloads) straight, without mpv's yt-dlp hook.
+ */
+internal fun ytDlp(videoId: String, cookies: Boolean): Stream? {
+    if (!hasYtDlp) return null
+    val cookieFile = if (cookies) ytDlpCookies() ?: return null else null
+    val command = listOf("yt-dlp", "-j", "-f", "bestaudio/best", "--no-warnings", "--no-playlist") +
+        (cookieFile?.let { listOf("--cookies", it.path) } ?: emptyList()) + "https://music.youtube.com/watch?v=$videoId"
+    return runCatching {
+        val process = ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD).start()
+        val out = process.inputStream.bufferedReader().readText()
+        if (!process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS) || process.exitValue() != 0) return@runCatching null
+        val info = Json.parseToJsonElement(out).jsonObject
+        val url = info["url"]?.jsonPrimitive?.contentOrNull ?: return@runCatching null
+        val userAgent = info["http_headers"]?.jsonObject?.get("User-Agent")?.jsonPrimitive?.contentOrNull
+        Stream(url, userAgent, if (cookies) "yt-dlp + cookies" else "yt-dlp").takeIf { answers(url, userAgent) }
+    }.getOrNull()
 }
 
 /** just the link, for the checks that only want to know a stream answers */
