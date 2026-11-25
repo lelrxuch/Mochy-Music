@@ -39,21 +39,21 @@ private val NEWPIPE_AUDIO_ITAGS = listOf(251, 140, 250, 249, 139)
 
 /**
  * The app's YTPlayerUtils, as far as it goes without PoTokens: VISIONOS first (direct links, no
- * token), then the TV and signed-in clients with NewPipe undoing the signature, then NewPipe's own
- * extractor, and last yt-dlp through mpv, with the session's cookies so restricted songs play.
+ * token), then yt-dlp, then the TV and signed-in clients with NewPipe undoing the signature and
+ * NewPipe's own extractor, then yt-dlp with the session's cookies, and last mpv's yt-dlp hook.
  * Every link is tried with a two-byte read before it's handed to mpv, so a 403 moves on instead of
  * failing in mpv. [high] picks the best bitrate, otherwise the smallest.
  */
 suspend fun findStream(videoId: String, high: Boolean = true): Stream {
     visionos(videoId, high)?.let { return it }
+    // yt-dlp without cookies is the fallback that's been seen to work on a home network (the
+    // diagnostics), so it goes next; with cookies it switches to web clients that need a PoToken
+    ytDlp(videoId, cookies = false)?.let { return it }
     for (client in FALLBACK_CLIENTS) {
         if (client.loginRequired && YouTube.cookie == null) continue
         signed(videoId, client, high)?.let { return it }
     }
     newPipe(videoId, high)?.let { return it }
-    // yt-dlp: signed out it picks the clients that hand out audio without a PoToken, so that goes
-    // first; the session's cookies only when that fails (they switch it to web clients that need one)
-    ytDlp(videoId, cookies = false)?.let { return it }
     if (YouTube.cookie != null) ytDlp(videoId, cookies = true)?.let { return it }
     return Stream("https://music.youtube.com/watch?v=$videoId", null, YT_DLP)
 }
