@@ -66,9 +66,9 @@ internal suspend fun visionos(videoId: String, high: Boolean): Stream? {
         ?.streamingData?.adaptiveFormats.orEmpty()
         .filter { it.isAudio && it.url != null }
         .sortedBy { if (high) -it.bitrate else it.bitrate }
-    return formats.firstNotNullOfOrNull { format ->
-        format.url?.takeIf { answers(it, client.userAgent) }?.let { Stream(it, client.userAgent, client.clientName) }
-    }
+    // one try per client: a link refused for one format is refused for all of them
+    val url = formats.firstOrNull()?.url ?: return null
+    return Stream(url, client.userAgent, client.clientName).takeIf { answers(url, client.userAgent) }
 }
 
 internal suspend fun signed(videoId: String, client: YouTubeClient, high: Boolean): Stream? {
@@ -78,19 +78,16 @@ internal suspend fun signed(videoId: String, client: YouTubeClient, high: Boolea
     val formats = response.streamingData?.adaptiveFormats.orEmpty()
         .filter { it.isAudio }
         .sortedBy { if (high) -it.bitrate else it.bitrate }
-    return formats.firstNotNullOfOrNull { format ->
-        NewPipeExtractor.getStreamUrl(format, videoId)
-            ?.takeIf { answers(it, client.userAgent) }
-            ?.let { Stream(it, client.userAgent, client.clientName) }
-    }
+    // the first format NewPipe can unsign, then one try: a refusal holds for the whole client
+    val url = formats.firstNotNullOfOrNull { NewPipeExtractor.getStreamUrl(it, videoId) } ?: return null
+    return Stream(url, client.userAgent, client.clientName).takeIf { answers(url, client.userAgent) }
 }
 
 internal fun newPipe(videoId: String, high: Boolean): Stream? {
     val streams = NewPipeExtractor.newPipePlayer(videoId).toMap()
     val order = if (high) NEWPIPE_AUDIO_ITAGS else NEWPIPE_AUDIO_ITAGS.reversed()
-    return order.firstNotNullOfOrNull { itag ->
-        streams[itag]?.takeIf { answers(it, null) }?.let { Stream(it, null, "NewPipe") }
-    }
+    val url = order.firstNotNullOfOrNull { streams[it] } ?: return null
+    return Stream(url, null, "NewPipe").takeIf { answers(url, null) }
 }
 
 /** asks for the first two bytes: a link that's refused (403) or gone is no use to mpv */

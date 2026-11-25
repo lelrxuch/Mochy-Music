@@ -74,7 +74,8 @@ fun SelectionBar(modifier: Modifier = Modifier) {
             app.selection.clear()
         }, size = 40.dp, iconSize = 20.dp)
         IconAction(drawable("queue_music"), str("add_to_queue"), {
-            picked.forEach(app.player::addToQueue)
+            // with nothing playing, the picked songs become the queue, in the order they were picked
+            if (app.player.current == null) app.player.playList(picked) else picked.forEach(app.player::addToQueue)
             app.selection.clear()
         }, size = 40.dp, iconSize = 20.dp)
         IconAction(drawable("favorite_border"), str("desktop_like_all"), {
@@ -83,8 +84,8 @@ fun SelectionBar(modifier: Modifier = Modifier) {
         }, size = 40.dp, iconSize = 20.dp)
         Spacer(Modifier.width(4.dp))
         PillButton(str("play_next"), {
-            // in reverse, so they play in the order they were picked
-            picked.asReversed().forEach(app.player::playNext)
+            // in reverse, so they play in the order they were picked; with nothing playing they just play
+            if (app.player.current == null) app.player.playList(picked) else picked.asReversed().forEach(app.player::playNext)
             app.selection.clear()
         }, light = true)
     }
@@ -100,7 +101,7 @@ class DragReorder {
     var rowHeight by mutableFloatStateOf(1f)
 
     /** where the dragged row would land if let go now */
-    fun target(count: Int) = if (dragging < 0) -1 else (dragging + (offset / rowHeight).roundToInt()).coerceIn(0, count - 1)
+    fun target(count: Int) = if (dragging < 0 || count <= 0) -1 else (dragging + (offset / rowHeight).roundToInt()).coerceIn(0, count - 1)
 }
 
 /**

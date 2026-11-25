@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -85,6 +86,16 @@ fun main() {
         ) {
             window.minimumSize = Dimension(760, 560)
             SingleInstance.window = window
+            // Ctrl or Shift let go while the window was away would otherwise leave clicks picking songs
+            DisposableEffect(window) {
+                val focus = object : java.awt.event.WindowAdapter() {
+                    override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
+                        app.selection.extending = false
+                    }
+                }
+                window.addWindowFocusListener(focus)
+                onDispose { window.removeWindowFocusListener(focus) }
+            }
             window.background = java.awt.Color.BLACK
             MochyTheme {
                 CompositionLocalProvider(
