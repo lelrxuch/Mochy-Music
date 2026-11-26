@@ -83,4 +83,11 @@
     <string name="desktop_diag_copy">Copiar informe</string>
     <string name="desktop_diag_chosen">Fuente con la que suena</string>
     <string name="desktop_diag_test_tone">mpv reproduce un tono de prueba</string>
+    <string name="desktop_error_offline_body">Revisa tu conexión. Mochy lo vuelve a intentar sola cuando regrese.</string>
+    <string name="desktop_error_timeout_body">YouTube Music tardó demasiado en responder. Volver a intentar suele funcionar.</string>
+    <string name="desktop_error_youtube_title">YouTube Music no respondió</string>
+    <string name="desktop_error_youtube_body">Respondió con el error %1$d. Volver a intentar suele funcionar; si sigue pasando, copia los detalles para reportarlo.</string>
+    <string name="desktop_error_other_body">Pasó algo inesperado. Copia los detalles si quieres reportarlo.</string>
+    <string name="desktop_copy_details">Copiar detalles</string>
+    <string name="desktop_version">Mochy para Linux %1$s</string>
 </resources>

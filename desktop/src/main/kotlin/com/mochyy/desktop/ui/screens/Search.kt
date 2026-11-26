@@ -202,7 +202,7 @@ private fun Results(query: String, kind: SearchKind, onKind: (SearchKind) -> Uni
         ChoiceChips(SearchKind.entries, kind, { str(it.labelKey) }, onKind)
         if (kind.filter == null) {
             val load = rememberLoad("summary" to query, attempt) { YouTube.searchSummary(query) }
-            LoadView(load, { attempt++ }) { page ->
+            LoadView(load, { attempt++ }, placeholder = { ListSkeleton() }) { page ->
                 ScrollPage(list) {
                     LazyColumn(state = list, contentPadding = PaddingValues(bottom = ChromeClearance)) {
                         if (page.summaries.isEmpty()) item { NoResults() }
@@ -211,14 +211,25 @@ private fun Results(query: String, kind: SearchKind, onKind: (SearchKind) -> Uni
                 }
             }
         } else {
-            // ponytail: only the first page of a filtered search, add searchContinuation when people scroll past ~20
             val load = rememberLoad(Triple("search", query, kind), attempt) { YouTube.search(query, kind.filter) }
-            LoadView(load, { attempt++ }) { result ->
+            LoadView(load, { attempt++ }, placeholder = { ListSkeleton(Modifier.padding(top = 12.dp)) }) { result ->
+                // more results come in as the end of the list gets close
+                var found by remember(result) { mutableStateOf(result.items.distinctBy { it.id }) }
+                var token by remember(result) { mutableStateOf(result.continuation) }
+                LoadMoreAtEnd(list, result) {
+                    val next = token ?: return@LoadMoreAtEnd false
+                    youtube { YouTube.searchContinuation(next) }.onSuccess { page ->
+                        val seen = found.mapTo(HashSet()) { it.id }
+                        found = found + page.items.filter { seen.add(it.id) }
+                        token = page.continuation
+                    }
+                    true
+                }
                 ScrollPage(list) {
                     LazyColumn(state = list, contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = ChromeClearance)) {
-                        if (result.items.isEmpty()) item { NoResults() }
-                        val songs = result.items.filterIsInstance<SongItem>()
-                        items(result.items, key = { it.id }) { item ->
+                        if (found.isEmpty()) item { NoResults() }
+                        val songs = found.filterIsInstance<SongItem>()
+                        items(found, key = { it.id }) { item ->
                             if (item is SongItem) {
                                 // a song from a song list plays that list, so next and previous follow the results
                                 SongRow(item, onClick = { app.player.playList(songs, songs.indexOf(item), query) })

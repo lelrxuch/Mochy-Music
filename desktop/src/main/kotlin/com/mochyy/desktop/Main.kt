@@ -87,7 +87,8 @@ fun main() {
     application {
         Window(
             onCloseRequest = { mpris.close(); app.player.close(); library.close(); exitApplication() },
-            title = "Mochy",
+            // the song playing shows in the taskbar and the window switcher
+            title = app.player.current?.let { song -> song.title + " · " + song.artists.joinToString { it.name } + " — Mochy" } ?: "Mochy",
             icon = icon,
             state = rememberWindowState(width = 1280.dp, height = 840.dp),
             onKeyEvent = { shortcut(app, it) },
@@ -119,7 +120,10 @@ fun main() {
     }
 }
 
-/** keys that work anywhere a text field isn't taking them: space plays and pauses, Esc and Alt+← go back */
+/**
+ * Keys that work anywhere a text field isn't taking them: space plays and pauses, Esc and Alt+← go
+ * back, Ctrl+←/→ change song, Ctrl+↑/↓ the volume, Ctrl+F searches, Ctrl+L likes what's playing.
+ */
 private fun shortcut(app: AppState, event: KeyEvent): Boolean {
     // Ctrl or Shift held turns a click on a song into picking it
     if (event.key in listOf(Key.CtrlLeft, Key.CtrlRight, Key.ShiftLeft, Key.ShiftRight)) {
@@ -137,6 +141,10 @@ private fun shortcut(app: AppState, event: KeyEvent): Boolean {
         event.isAltPressed && event.key == Key.DirectionLeft -> app.nav.back()
         event.isCtrlPressed && event.key == Key.DirectionRight -> app.player.next()
         event.isCtrlPressed && event.key == Key.DirectionLeft -> app.player.previous()
+        event.isCtrlPressed && event.key == Key.DirectionUp -> app.player.setVolume(app.library.data.volume + 5, save = true)
+        event.isCtrlPressed && event.key == Key.DirectionDown -> app.player.setVolume(app.library.data.volume - 5, save = true)
+        event.isCtrlPressed && event.key == Key.F -> app.nav.select(Tab.Search)
+        event.isCtrlPressed && event.key == Key.L -> app.player.current?.let(app.library::toggleLike) ?: return false
         else -> return false
     }
     return true

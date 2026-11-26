@@ -38,7 +38,7 @@ la propia app):
   en una base SQLite: `~/.local/share/mochy-desktop/library.db` (un `library.json` de antes se
   importa solo la primera vez y queda como `library.json.migrated`).
 - Ajustes: calidad de audio, borrar historiales y créditos.
-- Clic derecho en canciones, atajos (Espacio, Esc, Alt+←, Ctrl+←/→) y botón "atrás" del ratón.
+- Clic derecho en canciones, atajos (Espacio, Esc, Alt+←, Ctrl+←/→ canción, Ctrl+↑/↓ volumen, Ctrl+F buscar, Ctrl+L me gusta) y botón "atrás" del ratón.
 
 - Cuenta de YouTube Music (Ajustes): toma la sesión del navegador donde ya la iniciaste (Firefox, Zen,
   LibreWolf, Floorp, Brave, Chrome, Chromium, Vivaldi, también en Flatpak; las de Chromium se descifran

@@ -76,7 +76,7 @@ class HomeModel(private val scope: CoroutineScope) {
                     continuation = page.continuation
                     state = Load.Ready(Unit)
                 }
-                .onFailure { state = Load.Failed(it.message) }
+                .onFailure { state = Load.Failed(it) }
         }
     }
 
@@ -102,7 +102,7 @@ fun HomeScreen() {
         snapshotFlow { list.layoutInfo.visibleItemsInfo.lastOrNull()?.index to list.layoutInfo.totalItemsCount }
             .collect { (last, total) -> if (last != null && last >= total - 3) home.loadMore() }
     }
-    LoadView(home.state, home::refresh) {
+    LoadView(home.state, home::refresh, placeholder = { ShelvesSkeleton() }) {
         ScrollPage(list) {
             LazyColumn(state = list, contentPadding = PaddingValues(bottom = ChromeClearance)) {
                 item(key = "hero") { HomeHero(home.sections) }

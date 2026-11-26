@@ -113,7 +113,7 @@ fun SettingsScreen() {
             }
             item {
                 SettingsCard(str("desktop_about_title"), str("desktop_about_body")) {
-                    Text("Mochy para Linux $APP_VERSION", color = Dim, style = MaterialTheme.typography.bodySmall)
+                    Text(str("desktop_version", APP_VERSION), color = Dim, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(12.dp))
                     PillButton(str("desktop_open_github"), { openLink("https://github.com/realidkroo/mochy-music") })
                 }

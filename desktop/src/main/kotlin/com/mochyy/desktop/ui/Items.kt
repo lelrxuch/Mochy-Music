@@ -32,7 +32,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -281,21 +280,6 @@ fun SongColumns(songs: List<SongItem>, columns: Int = 2) {
 }
 
 /** a page's loading spinner or its error with a retry button */
-@Composable
-fun <T> LoadView(load: Load<T>, onRetry: () -> Unit, content: @Composable (T) -> Unit) {
-    when (load) {
-        is Load.Ready -> content(load.value)
-        Load.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-            CircularProgressIndicator(color = Color.White, strokeWidth = 3.dp, modifier = Modifier.size(36.dp))
-        }
-        is Load.Failed -> Column(Modifier.fillMaxSize(), Arrangement.Center, Alignment.CenterHorizontally) {
-            Text(str("desktop_cant_load"), style = MaterialTheme.typography.titleMedium)
-            load.reason?.let { Text(it.take(160), color = Dim, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp)) }
-            PillButton(str("retry"), onRetry)
-        }
-    }
-}
-
 /** a scrolling page with a thin desktop scrollbar on its right edge */
 @Composable
 fun ScrollPage(state: LazyListState, content: @Composable BoxScope.() -> Unit) {

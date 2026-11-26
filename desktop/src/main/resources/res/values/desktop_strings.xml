@@ -84,4 +84,11 @@
     <string name="desktop_diag_copy">Copy report</string>
     <string name="desktop_diag_chosen">Source used to play</string>
     <string name="desktop_diag_test_tone">mpv plays a test tone</string>
+    <string name="desktop_error_offline_body">Check your connection. Mochy tries again by itself when it\'s back.</string>
+    <string name="desktop_error_timeout_body">YouTube Music took too long to answer. Trying again usually works.</string>
+    <string name="desktop_error_youtube_title">YouTube Music didn\'t answer</string>
+    <string name="desktop_error_youtube_body">It answered with error %1$d. Trying again usually works; if it keeps happening, copy the details to report it.</string>
+    <string name="desktop_error_other_body">Something unexpected happened. Copy the details if you want to report it.</string>
+    <string name="desktop_copy_details">Copy details</string>
+    <string name="desktop_version">Mochy for Linux %1$s</string>
 </resources>

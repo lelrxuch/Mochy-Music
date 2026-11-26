@@ -216,8 +216,9 @@ class Player(
 
     /** [save] writes it to the library, only once a drag ends rather than on every step of it */
     fun setVolume(percent: Double, save: Boolean) {
-        mpv?.setVolume(percent)
-        if (save) library.setVolume(percent)
+        val volume = percent.coerceIn(0.0, 100.0)
+        mpv?.setVolume(volume)
+        if (save) library.setVolume(volume)
     }
 
     fun cycleRepeat() {

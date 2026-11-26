@@ -102,17 +102,19 @@ val LocalApp = staticCompositionLocalOf<AppState> { error("no app state") }
 
 sealed interface Load<out T> {
     data object Loading : Load<Nothing>
-    data class Failed(val reason: String?) : Load<Nothing>
+    data class Failed(val error: Throwable) : Load<Nothing>
     data class Ready<T>(val value: T) : Load<T>
 }
 
-/** pages already fetched, so going back to one shows it at once instead of loading it again */
-private val pages = HashMap<Any, Any?>()
-
 /**
- * Fetches [key]'s page once and keeps it. Bump [attempt] to fetch again after a failure.
- * ponytail: the cache never forgets during a run, add a size limit if memory ever matters
+ * Pages already fetched, so going back to one shows it at once instead of loading it again. The
+ * last 60 are kept: the one seen longest ago goes first, so hours of browsing don't pile up in memory.
  */
+private val pages = object : LinkedHashMap<Any, Any?>(64, 0.75f, true) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Any, Any?>) = size > 60
+}
+
+/** Fetches [key]'s page once and keeps it. Bump [attempt] to fetch again after a failure. */
 @Composable
 fun <T> rememberLoad(key: Any, attempt: Int = 0, fetch: suspend () -> Result<T>): Load<T> {
     @Suppress("UNCHECKED_CAST")
@@ -122,7 +124,7 @@ fun <T> rememberLoad(key: Any, attempt: Int = 0, fetch: suspend () -> Result<T>)
         value = Load.Loading
         value = youtube(fetch).fold(
             onSuccess = { pages[key] = it; Load.Ready(it) },
-            onFailure = { Load.Failed(it.message) },
+            onFailure = { Load.Failed(it) },
         )
     }.value
 }

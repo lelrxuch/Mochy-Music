@@ -350,10 +350,7 @@ fun EditRowControls(drag: DragReorder, index: Int, count: Int, onRemove: () -> U
     }
 }
 
-fun copyLink(app: AppState, link: String) {
-    runCatching { Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(link), null) }
-        .onSuccess { app.player.message = str("link_copied") }
-}
+fun copyLink(app: AppState, link: String) = copyToClipboard(app, link, str("link_copied"))
 
 /** the right-click menu of an album, artist or playlist (AlbumMenu.kt, ArtistMenu.kt, PlaylistMenu.kt) */
 fun itemActions(app: AppState, item: YTItem): List<Pair<String, () -> Unit>> = buildList {

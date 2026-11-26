@@ -12,6 +12,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.foundation.TooltipPlacement
+import androidx.compose.foundation.TooltipArea
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.border
@@ -173,9 +177,23 @@ fun RoundButton(onClick: () -> Unit, size: Dp, modifier: Modifier = Modifier, ba
 }
 
 /** an icon in a round button */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun IconAction(icon: Painter, label: String?, onClick: () -> Unit, size: Dp = 40.dp, iconSize: Dp = 22.dp, tint: Color = Color.White, background: Color = Color.Transparent) {
-    RoundButton(onClick, size, background = background) { Icon(icon, label, Modifier.size(iconSize), tint = tint) }
+    val button = @Composable { RoundButton(onClick, size, background = background) { Icon(icon, label, Modifier.size(iconSize), tint = tint) } }
+    if (label == null) return button()
+    // on a computer an icon says what it does when the pointer rests on it
+    TooltipArea(
+        tooltip = {
+            Text(
+                label, Modifier.clip(RoundedCornerShape(8.dp)).background(Raised).border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.labelMedium,
+            )
+        },
+        delayMillis = 600,
+        tooltipPlacement = TooltipPlacement.ComponentRect(Alignment.BottomCenter, Alignment.BottomCenter, DpOffset(0.dp, 6.dp)),
+    ) { button() }
 }
 
 /** the white or dark stadium buttons of the home hero and the album and artist pages */

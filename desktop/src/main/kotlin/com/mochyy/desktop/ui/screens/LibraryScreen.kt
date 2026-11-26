@@ -101,7 +101,7 @@ fun LibraryScreen() {
                                     }
                                 }
                             }
-                            is Load.Failed -> item { Text(str("desktop_cant_load"), Modifier.padding(24.dp), color = Dim) }
+                            is Load.Failed -> item { Text(describe(accountHistory.error).first, Modifier.padding(24.dp), color = Dim) }
                             Load.Loading -> {}
                         }
                 } else when (shelf) {

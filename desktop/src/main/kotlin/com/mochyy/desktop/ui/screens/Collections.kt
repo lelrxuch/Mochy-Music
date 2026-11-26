@@ -71,7 +71,7 @@ fun ArtistScreen(id: String) {
     var attempt by remember { mutableIntStateOf(0) }
     val load = rememberLoad(Route.Artist(id), attempt) { YouTube.artist(id) }
     val list = rememberLazyListState()
-    LoadView(load, { attempt++ }) { page ->
+    LoadView(load, { attempt++ }, placeholder = { CollectionSkeleton() }) { page ->
         val artist = page.artist
         ScrollPage(list) {
             LazyColumn(state = list, contentPadding = PaddingValues(bottom = ChromeClearance)) {
@@ -117,7 +117,7 @@ fun AlbumScreen(id: String) {
     var attempt by remember { mutableIntStateOf(0) }
     val load = rememberLoad(Route.Album(id), attempt) { YouTube.album(id) }
     val list = rememberLazyListState()
-    LoadView(load, { attempt++ }) { page ->
+    LoadView(load, { attempt++ }, placeholder = { CollectionSkeleton() }) { page ->
         val album = page.album
         val songs = page.songs
         ScrollPage(list) {
@@ -150,23 +150,18 @@ fun PlaylistScreen(id: String) {
     var attempt by remember { mutableIntStateOf(0) }
     val load = rememberLoad(Route.Playlist(id), attempt) { YouTube.playlist(id) }
     val list = rememberLazyListState()
-    LoadView(load, { attempt++ }) { page ->
+    LoadView(load, { attempt++ }, placeholder = { CollectionSkeleton() }) { page ->
         val playlist = page.playlist
         // long playlists come in pages, the next one loads as the end comes into view
         var songs by remember(page) { mutableStateOf(page.songs) }
         var token by remember(page) { mutableStateOf(page.songsContinuation) }
-        LaunchedEffect(page) {
-            snapshotFlow { list.layoutInfo.visibleItemsInfo.lastOrNull()?.index to list.layoutInfo.totalItemsCount }
-                .collect { (last, total) ->
-                    val next = token
-                    if (next != null && last != null && last >= total - 5) {
-                        token = null
-                        youtube { YouTube.playlistContinuation(next) }.onSuccess {
-                            songs = songs + it.songs
-                            token = it.continuation
-                        }
-                    }
-                }
+        LoadMoreAtEnd(list, page) {
+            val next = token ?: return@LoadMoreAtEnd false
+            youtube { YouTube.playlistContinuation(next) }.onSuccess {
+                songs = songs + it.songs
+                token = it.continuation
+            }
+            true // a failed page is asked for again on the next scroll
         }
         // one of yours on YouTube Music: it can be renamed, deleted, reordered and have songs taken out
         val editable = playlist.isEditable && app.account.session != null
