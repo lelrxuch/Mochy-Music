@@ -198,7 +198,10 @@ fun PlaylistScreen(id: String) {
                 }
                 if (!editable) songList(songs, title, numbered = false)
                 else itemsIndexed(songs, key = { i, song -> "$i-${song.id}" }) { i, song ->
-                    val remove = { removeFromOnlinePlaylist(app, playlist.id, song) { songs = songs.filterNot { it.setVideoId == song.setVideoId } } }
+                    val remove = {
+                        songs = songs.filterNot { it === song } // gone at once; back in its place if YouTube refuses
+                        removeFromOnlinePlaylist(app, playlist.id, song) { songs = songs.toMutableList().apply { add(i.coerceAtMost(size), song) } }
+                    }
                     SongRow(
                         song, onClick = { app.player.playList(songs, i, title) },
                         modifier = Modifier.reorderRow(drag, i, songs.size).padding(horizontal = 12.dp),

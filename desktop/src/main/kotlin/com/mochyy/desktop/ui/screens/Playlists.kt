@@ -250,6 +250,10 @@ fun addSongs(app: AppState, target: PlaylistTarget, songs: List<SongItem>) {
             val id = target.playlist.id.removePrefix("VL")
             val sent = youtube { YouTube.addVideosToPlaylist(id, songs.map { it.id }) }
             app.player.message = if (sent.isSuccess) str("desktop_added_to", target.name) else str("desktop_action_failed")
+            if (sent.isSuccess) {
+                forgetPlaylist(id)
+                app.sync.pull() // the shelf's song count and cover follow
+            }
         }
     }
 }
@@ -286,6 +290,7 @@ fun renameOnlinePlaylist(app: AppState, playlist: PlaylistItem, name: String, on
         val renamed = youtube { YouTube.renamePlaylist(playlist.id.removePrefix("VL"), name) }
         app.player.message = if (renamed.isSuccess) null else str("desktop_action_failed")
         if (renamed.isSuccess) {
+            forgetPlaylist(playlist.id)
             onDone()
             app.library.editSavedPlaylists { list -> list.map { if (it.id == playlist.id) it.copy(title = name) else it } }
             app.sync.pull()
@@ -297,6 +302,7 @@ fun deleteOnlinePlaylist(app: AppState, playlist: PlaylistItem) {
     app.scope.launch {
         val deleted = youtube { YouTube.deletePlaylist(playlist.id.removePrefix("VL")) }
         if (deleted.isSuccess) {
+            forgetPlaylist(playlist.id)
             app.nav.back()
             app.sync.forgetCreated(playlist.id)
             app.library.editSavedPlaylists { list -> list.filterNot { it.id == playlist.id } }
@@ -323,12 +329,25 @@ fun downloadAll(app: AppState, load: suspend () -> Result<List<SongItem>>) {
     }
 }
 
-/** takes a song out of one of your YouTube playlists; [onDone] updates the page when YouTube agrees */
-fun removeFromOnlinePlaylist(app: AppState, playlistId: String, song: SongItem, onDone: () -> Unit) {
-    val setVideoId = song.setVideoId ?: return
+/**
+ * Takes a song out of one of your YouTube playlists. The page has already taken it off the list
+ * (so it goes at once, not when YouTube answers); [onFailed] puts it back if YouTube says no.
+ */
+fun removeFromOnlinePlaylist(app: AppState, playlistId: String, song: SongItem, onFailed: () -> Unit) {
+    val setVideoId = song.setVideoId
+    if (setVideoId == null) {
+        app.player.message = str("desktop_action_failed")
+        return onFailed()
+    }
     app.scope.launch {
         val removed = youtube { YouTube.removeFromPlaylist(playlistId.removePrefix("VL"), song.id, setVideoId) }
-        if (removed.isSuccess) onDone() else app.player.message = str("desktop_action_failed")
+        if (removed.isSuccess) {
+            forgetPlaylist(playlistId)
+            app.sync.pull()
+        } else {
+            app.player.message = str("desktop_action_failed")
+            onFailed()
+        }
     }
 }
 
@@ -337,7 +356,7 @@ fun moveInOnlinePlaylist(app: AppState, playlistId: String, moved: SongItem, suc
     val movedId = moved.setVideoId ?: return
     app.scope.launch {
         val ok = youtube { YouTube.moveSongPlaylist(playlistId.removePrefix("VL"), movedId, successor?.setVideoId) }
-        if (ok.isFailure) app.player.message = str("desktop_action_failed")
+        if (ok.isSuccess) forgetPlaylist(playlistId) else app.player.message = str("desktop_action_failed")
     }
 }
 

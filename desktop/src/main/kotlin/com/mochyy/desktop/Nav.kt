@@ -110,20 +110,32 @@ sealed interface Load<out T> {
  * Pages already fetched, so going back to one shows it at once instead of loading it again. The
  * last 60 are kept: the one seen longest ago goes first, so hours of browsing don't pile up in memory.
  */
-private val pages = object : LinkedHashMap<Any, Any?>(64, 0.75f, true) {
+internal val pages = object : LinkedHashMap<Any, Any?>(64, 0.75f, true) {
     override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Any, Any?>) = size > 60
+}
+
+/**
+ * Drops the kept copy of a playlist's page after you change it on YouTube (songs added, taken out,
+ * moved, renamed), so opening it again shows it as it is now instead of as it was.
+ */
+fun forgetPlaylist(id: String) {
+    val bare = id.removePrefix("VL")
+    synchronized(pages) {
+        pages.remove(Route.Playlist(bare))
+        pages.remove(Route.Playlist("VL$bare"))
+    }
 }
 
 /** Fetches [key]'s page once and keeps it. Bump [attempt] to fetch again after a failure. */
 @Composable
 fun <T> rememberLoad(key: Any, attempt: Int = 0, fetch: suspend () -> Result<T>): Load<T> {
     @Suppress("UNCHECKED_CAST")
-    val cached = pages[key]?.let { Load.Ready(it as T) }
+    val cached = synchronized(pages) { pages[key] }?.let { Load.Ready(it as T) }
     return produceState(cached ?: Load.Loading, key, attempt) {
         if (cached != null && attempt == 0) return@produceState
         value = Load.Loading
         value = youtube(fetch).fold(
-            onSuccess = { pages[key] = it; Load.Ready(it) },
+            onSuccess = { synchronized(pages) { pages[key] = it }; Load.Ready(it) },
             onFailure = { Load.Failed(it) },
         )
     }.value
