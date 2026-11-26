@@ -1,5 +1,11 @@
 package com.mochyy.desktop
 
+import com.mochyy.desktop.text.*
+import com.mochyy.desktop.playback.*
+import com.mochyy.desktop.library.*
+import com.mochyy.desktop.account.*
+import com.mochyy.desktop.ui.*
+import com.mochyy.desktop.ui.screens.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

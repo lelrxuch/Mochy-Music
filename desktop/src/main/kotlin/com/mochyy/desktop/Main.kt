@@ -2,6 +2,12 @@
 // https://github.com/realidkroo/mochy-music (Mochy itself is a fork of ViviMusic, built on Metrolist).
 package com.mochyy.desktop
 
+import com.mochyy.desktop.text.*
+import com.mochyy.desktop.playback.*
+import com.mochyy.desktop.library.*
+import com.mochyy.desktop.account.*
+import com.mochyy.desktop.ui.*
+import com.mochyy.desktop.ui.screens.*
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
