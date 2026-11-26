@@ -43,7 +43,7 @@ class ScreensCheck {
         dir.mkdirs()
         val work = Files.createTempDirectory("mochy-shots").toFile()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val library = LibraryStore(File(work, "library.json"))
+        val library = LibraryStore(File(work, "library.db"))
         val account = AccountStore(File(work, "account.json"))
         val app = AppState(Nav(), Player(scope, library, File(work, "queue.json")), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account))
 

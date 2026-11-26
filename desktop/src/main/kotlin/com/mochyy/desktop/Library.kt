@@ -11,8 +11,8 @@ import com.music.innertube.models.YTItem
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 @Serializable
 data class LibraryData(
@@ -47,13 +47,24 @@ data class PendingChange(val id: String, val kind: String, val target: String, v
 }
 
 /**
- * What the Android app keeps in its database, kept here in one JSON file:
- * ~/.local/share/mochy-desktop/library.json. Small enough to rewrite whole on every change.
- * ponytail: one file rewritten each time, move to SQLite (Room works on desktop) if libraries grow to thousands of songs
+ * The library: what the Android app keeps in its database. The screens read [data], a plain value in
+ * memory, so they never wait for the disk; every change is handed to one writer thread that puts
+ * only what changed into ~/.local/share/mochy-desktop/library.db (see [LibraryDb]).
+ * A library.json from before the database is read once, written in, and kept as library.json.migrated.
  */
-class LibraryStore(private val file: File = defaultFile()) {
-    var data by mutableStateOf(load())
+class LibraryStore(private val file: File = defaultFile()) : AutoCloseable {
+    private val writer = Executors.newSingleThreadExecutor { Thread(it, "library-writer").apply { isDaemon = true } }
+    private val lock = Any()
+    private val db: LibraryDb
+
+    var data: LibraryData by mutableStateOf(LibraryData())
         private set
+
+    init {
+        val (opened, loaded) = openOrStartOver()
+        db = opened
+        data = loaded
+    }
 
     /** told about every heart and save the person taps, with the new state; the sync sends them to YouTube Music */
     var onChange: ((YTItem, Boolean) -> Unit)? = null
@@ -161,25 +172,62 @@ class LibraryStore(private val file: File = defaultFile()) {
     fun removeDownload(id: String) = update { copy(downloads = downloads.filterNot { it.song.id == id }) }
 
     private fun update(change: LibraryData.() -> LibraryData) {
-        data = data.change()
-        save()
-    }
-
-    private fun load(): LibraryData {
-        if (!file.exists()) return LibraryData()
-        return runCatching { json.decodeFromString<LibraryData>(file.readText()) }.getOrElse {
-            // never overwrite a library we couldn't read: keep it aside so nothing is lost
-            file.renameTo(File(file.path + ".broken-${System.currentTimeMillis()}"))
-            LibraryData()
+        synchronized(lock) {
+            val old = data
+            val new = old.change()
+            data = new
+            // queued in the order the changes happened, so the disk always ends where memory is
+            runCatching { writer.execute { persist(old, new) } }
+                .onFailure { System.err.println("library: a change after closing wasn't saved") }
         }
     }
 
-    // written to a temp file first and then swapped in, so a crash mid-write never leaves half a library
-    private fun save() {
-        file.parentFile.mkdirs()
-        val temp = File(file.path + ".tmp")
-        temp.writeText(json.encodeToString(LibraryData.serializer(), data))
-        Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+    private fun persist(old: LibraryData, new: LibraryData) {
+        runCatching { db.write(old, new) }.onFailure {
+            System.err.println("library: couldn't save a change, the next one rewrites everything: ${it.message}")
+            db.markDirty()
+        }
+    }
+
+    /** waits for the changes still being written and closes the database; call when the app quits */
+    @Synchronized
+    override fun close() {
+        if (writer.isShutdown) return
+        writer.shutdown()
+        writer.awaitTermination(10, TimeUnit.SECONDS)
+        runCatching { db.close() }
+    }
+
+    private fun openOrStartOver(): Pair<LibraryDb, LibraryData> {
+        val legacy = File(file.parentFile, "library.json")
+        val fresh = !file.exists()
+        val db = runCatching { LibraryDb.open(file) }.getOrElse { problem ->
+            // never overwrite a library we couldn't read: keep it aside so nothing is lost
+            System.err.println("library: couldn't open ${file.name}, kept aside: ${problem.message}")
+            keepAside(file)
+            listOf("-wal", "-shm").forEach { keepAside(File(file.path + it)) }
+            LibraryDb.open(file)
+        }
+        if (fresh && legacy.exists()) {
+            val imported = readLegacy(legacy)
+            if (imported != null) {
+                db.markDirty() // the first write puts the whole library down
+                db.write(LibraryData(), imported)
+                legacy.renameTo(File(legacy.path + ".migrated"))
+            }
+        }
+        return db to db.load()
+    }
+
+    private fun readLegacy(legacy: File): LibraryData? =
+        runCatching { json.decodeFromString<LibraryData>(legacy.readText()) }.getOrElse {
+            System.err.println("library: couldn't read ${legacy.name}, kept aside: ${it.message}")
+            keepAside(legacy)
+            null
+        }
+
+    private fun keepAside(broken: File) {
+        if (broken.exists()) broken.renameTo(File(broken.path + ".broken-${System.currentTimeMillis()}"))
     }
 
     companion object {
@@ -189,7 +237,7 @@ class LibraryStore(private val file: File = defaultFile()) {
 
         fun defaultFile(): File {
             val data = System.getenv("XDG_DATA_HOME") ?: "${System.getProperty("user.home")}/.local/share"
-            return File(data, "mochy-desktop/library.json")
+            return File(data, "mochy-desktop/library.db")
         }
     }
 }

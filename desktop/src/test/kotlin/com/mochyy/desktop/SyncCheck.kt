@@ -46,7 +46,7 @@ class SyncCheck {
         try {
             val account = AccountStore(File(dir, "account.json"))
             account.signIn(login.cookie).getOrThrow()
-            val library = LibraryStore(File(dir, "library.json"))
+            val library = LibraryStore(File(dir, "library.db"))
             val sync = LibrarySync(this, library, account)
             sync.pull()
             while (sync.syncing) delay(100)

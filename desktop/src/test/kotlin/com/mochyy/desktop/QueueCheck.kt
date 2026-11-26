@@ -22,7 +22,7 @@ class QueueCheck {
             }
             val list = songs.joinToString(",") { Json.encodeToString(SongItem.serializer(), it) }
             file.writeText("""{"songs":[$list],"index":1,"position":42.0,"title":"Road trip"}""")
-            val player = Player(CoroutineScope(SupervisorJob() + Dispatchers.Default), LibraryStore(File(dir, "library.json")), file)
+            val player = Player(CoroutineScope(SupervisorJob() + Dispatchers.Default), LibraryStore(File(dir, "library.db")), file)
             assertEquals("two", player.current?.id)
             assertEquals("Road trip", player.queueTitle)
             player.close()

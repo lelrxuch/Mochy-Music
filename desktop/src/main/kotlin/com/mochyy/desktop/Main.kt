@@ -70,6 +70,8 @@ fun main() {
     SingleInstance.listen()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     val library = LibraryStore()
+    // the last changes reach the disk even when the app is stopped some other way (logout, kill)
+    Runtime.getRuntime().addShutdownHook(Thread { library.close() })
     // the sign-in goes first, so the first home feed is already the account's own
     val account = AccountStore()
     account.keepFresh(scope)
@@ -78,7 +80,7 @@ fun main() {
     val icon = BitmapPainter(Image.makeFromEncoded(AppState::class.java.getResource("/icon.png")!!.readBytes()).toComposeImageBitmap())
     application {
         Window(
-            onCloseRequest = { mpris.close(); app.player.close(); exitApplication() },
+            onCloseRequest = { mpris.close(); app.player.close(); library.close(); exitApplication() },
             title = "Mochy",
             icon = icon,
             state = rememberWindowState(width = 1280.dp, height = 840.dp),
