@@ -70,8 +70,14 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import org.jetbrains.skia.Image
 import java.awt.Dimension
+import java.awt.Toolkit
 
 fun main() {
+    // Java names the window after the thread that starts the window system, and GNOME matches that
+    // name to the launcher's StartupWMClass. Started here, on the main thread, it's
+    // "com-mochyy-desktop-MainKt"; started later by a background thread (Dispatchers.Main does) it
+    // was "java-lang-Thread", so the dock showed a generic icon instead of Mochy's.
+    Toolkit.getDefaultToolkit()
     if (SingleInstance.handOff()) return
     SingleInstance.listen()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
