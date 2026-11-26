@@ -84,7 +84,7 @@ fun AudioLabScreen() {
                                     },
                                 )
                             }) {
-                                Chip(preset.name, lab.presetId == preset.id) { update(lab.applyPreset(preset)) }
+                                Chip(preset.name, lab.eqEnabled && lab.presetId == preset.id) { update(lab.applyPreset(preset)) }
                             }
                         }
                     }
