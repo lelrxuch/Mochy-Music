@@ -64,6 +64,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.runtime.staticCompositionLocalOf
+import com.mochyy.desktop.integrations.DiscordPlayback
+import com.mochyy.desktop.integrations.DiscordPresence
+import com.mochyy.desktop.integrations.DiscordPresenceState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -71,6 +79,8 @@ import kotlinx.coroutines.delay
 import org.jetbrains.skia.Image
 import java.awt.Dimension
 import java.awt.Toolkit
+
+internal val LocalDiscordConnection = staticCompositionLocalOf<StateFlow<String?>> { MutableStateFlow(null) }
 
 fun main() {
     // Java names the window after the thread that starts the window system, and GNOME matches that
@@ -89,10 +99,35 @@ fun main() {
     account.keepFresh(scope)
     val app = AppState(Nav(), Player(scope, library), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account), scope)
     val mpris = Mpris(scope, app.player)
+    val discord = DiscordPresence(scope)
+    val discordWatch = scope.launch {
+        while (isActive) {
+            val settings = library.data
+            val id = settings.discordApplicationId.takeIf { settings.discordEnabled }.orEmpty()
+            val song = app.player.current
+            val mpv = app.player.mpv
+            val duration = mpv?.duration?.value ?: 0.0
+            val playback = if (id.isNotEmpty() && song != null && mpv != null && !app.player.loading &&
+                !mpv.paused.value && duration.isFinite() && duration > 0
+            ) {
+                val seekRevision = mpv.seekRevision.value
+                DiscordPlayback(song, mpv.position.value, duration, seekRevision = seekRevision)
+            } else null
+            discord.desired.value = DiscordPresenceState(id, song?.id, playback)
+            delay(200)
+        }
+    }
     val icon = BitmapPainter(Image.makeFromEncoded(AppState::class.java.getResource("/icon.png")!!.readBytes()).toComposeImageBitmap())
     application {
         Window(
-            onCloseRequest = { mpris.close(); app.player.close(); library.close(); exitApplication() },
+            onCloseRequest = {
+                discordWatch.cancel()
+                discord.close()
+                mpris.close()
+                app.player.close()
+                library.close()
+                exitApplication()
+            },
             // the song playing shows in the taskbar and the window switcher
             title = app.player.current?.let { song -> song.title + " · " + song.artists.joinToString { it.name } + " — Mochy" } ?: "Mochy",
             icon = icon,
@@ -115,6 +150,7 @@ fun main() {
             MochyTheme {
                 CompositionLocalProvider(
                     LocalApp provides app,
+                    LocalDiscordConnection provides discord.connectedId,
                     LocalContextMenuRepresentation provides DarkDefaultContextMenuRepresentation,
                     LocalScrollbarStyle provides ScrollbarStyle(
                         minimalHeight = 32.dp, thickness = 6.dp, shape = RoundedCornerShape(3.dp), hoverDurationMillis = 200,

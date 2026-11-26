@@ -33,6 +33,8 @@ data class LibraryData(
     val normalize: Boolean = true,
     val downloads: List<DownloadedSong> = emptyList(),
     val audioLab: AudioLabSettings = AudioLabSettings(),
+    val discordEnabled: Boolean = false,
+    val discordApplicationId: String = "",
 )
 
 /** a playlist kept on this computer only, for when there's no YouTube account (the app's local playlists) */
@@ -167,6 +169,10 @@ class LibraryStore(private val file: File = defaultFile()) : AutoCloseable {
     fun setReportPlays(report: Boolean) = update { copy(reportPlays = report) }
 
     fun setNormalize(normalize: Boolean) = update { copy(normalize = normalize) }
+
+    fun setDiscordEnabled(enabled: Boolean) = update { copy(discordEnabled = enabled) }
+
+    fun setDiscordApplicationId(id: String) = update { copy(discordApplicationId = id) }
 
     fun setAudioLab(lab: AudioLabSettings) = update { copy(audioLab = lab) }
 

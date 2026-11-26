@@ -94,4 +94,10 @@
     <string name="desktop_error_other_body">Pasó algo inesperado. Copia los detalles si quieres reportarlo.</string>
     <string name="desktop_copy_details">Copiar detalles</string>
     <string name="desktop_version">Mochy para Linux %1$s</string>
+    <string name="desktop_discord_toggle">Mostrar en Discord lo que estoy escuchando</string>
+    <string name="desktop_discord_id">ID de aplicación de Discord</string>
+    <string name="desktop_discord_help">Obtén el ID de aplicación en discord.com/developers/applications.</string>
+    <string name="desktop_discord_connected">Conectado</string>
+    <string name="desktop_discord_not_found">Discord no encontrado</string>
+    <string name="desktop_discord_no_id">Sin ID de aplicación</string>
 </resources>

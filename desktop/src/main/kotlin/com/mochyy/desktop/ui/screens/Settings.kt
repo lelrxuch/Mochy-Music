@@ -30,8 +30,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -47,6 +50,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,6 +78,7 @@ fun SettingsScreen() {
         LazyColumn(state = list, contentPadding = PaddingValues(bottom = ChromeClearance)) {
             item { PageTitle(str("settings")) }
             item { AccountCard() }
+            item { DiscordCard() }
             if (app.account.session != null) {
                 item {
                     SettingsCard(str("desktop_report_title"), str("desktop_report_body")) {
@@ -119,6 +125,42 @@ fun SettingsScreen() {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DiscordCard() {
+    val library = LocalApp.current.library
+    val settings = library.data
+    val connectedId by LocalDiscordConnection.current.collectAsState()
+    val id = settings.discordApplicationId
+    val discordToggleLabel = str("desktop_discord_toggle")
+    SettingsCard("Discord", null) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(discordToggleLabel, Modifier.weight(1f))
+            Switch(
+                settings.discordEnabled, library::setDiscordEnabled,
+                Modifier.semantics { contentDescription = discordToggleLabel },
+            )
+        }
+        OutlinedTextField(
+            value = id,
+            onValueChange = { input ->
+                val trimmed = input.trim()
+                if (trimmed.length <= 20 && trimmed.all { it in '0'..'9' }) library.setDiscordApplicationId(trimmed)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(str("desktop_discord_id")) },
+            supportingText = { Text(str("desktop_discord_help")) },
+            singleLine = true,
+        )
+        val status = when {
+            id.isEmpty() -> "desktop_discord_no_id"
+            !settings.discordEnabled -> "desktop_off"
+            connectedId == id -> "desktop_discord_connected"
+            else -> "desktop_discord_not_found"
+        }
+        Text(str(status), color = Dim, style = MaterialTheme.typography.bodySmall)
     }
 }
 
