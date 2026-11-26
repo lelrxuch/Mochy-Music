@@ -1,6 +1,14 @@
 package com.mochyy.desktop
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import com.music.innertube.models.BrowseEndpoint
+import com.music.innertube.pages.MoodAndGenres
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import com.music.innertube.YouTube
@@ -39,9 +47,9 @@ class ScreensCheck {
         val account = AccountStore(File(work, "account.json"))
         val app = AppState(Nav(), Player(scope, library, File(work, "queue.json")), library, HomeModel(scope), SearchModel(), account, LibrarySync(scope, library, account))
 
-        fun shot(name: String, seconds: Int = 6) {
+        fun shot(name: String, seconds: Int = 6, content: @Composable () -> Unit = { ShellForTest() }) {
             val scene = ImageComposeScene(1280, 840, Density(1f)) {
-                MochyTheme { CompositionLocalProvider(LocalApp provides app) { ShellForTest() } }
+                MochyTheme { CompositionLocalProvider(LocalApp provides app) { content() } }
             }
             var time = 0L
             var image = scene.render(time)
@@ -94,6 +102,16 @@ class ScreensCheck {
             shot("5b-player-sample", 6)
             app.nav.playerOpen = false
         }
+        // the moods grid of the search page, with sample colours and covers since CI can't load YouTube's
+        val colors = listOf(0xFFE53935, 0xFF8E24AA, 0xFF1E88E5, 0xFF43A047, 0xFFFDD835, 0xFF000000, 0xFFFB8C00, 0xFF00ACC1, 0xFF6D4C41, 0xFFD81B60)
+        val names = listOf("Chill", "Commute", "Energy boosters", "Feel good", "Focus", "Gaming", "Party", "Romance", "Sleep", "Workout & running")
+        val moods = MoodAndGenres("Moods & moments", names.mapIndexed { i, title ->
+            MoodAndGenres.Item(title, colors[i], BrowseEndpoint("FEmusic_moods_and_genres_category", "sample$i"))
+        })
+        moods.items.forEachIndexed { i, mood ->
+            MoodCovers.covers[MoodCovers.key(mood)] = listOf(SAMPLE_VIDEOS[i % 12], SAMPLE_VIDEOS[(i + 5) % 12]).map { "https://i.ytimg.com/vi/$it/hqdefault.jpg" }
+        }
+        shot("2b-moods", 4) { Box(Modifier.fillMaxSize().background(Color.Black)) { MoodSection(moods) } }
         app.nav.select(Tab.Settings)
         shot("7-settings", 3)
         library.setAudioLab(AudioLabSettings(eqEnabled = true, presetId = "rock", gains = EqPresets.first { it.id == "rock" }.gains, reverb = Reverb.Hall))

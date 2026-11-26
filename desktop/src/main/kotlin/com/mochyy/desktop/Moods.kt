@@ -51,7 +51,7 @@ private val TileBase = Color(0xFF121214)
 private val CoverBase = Color(0xFF1C1C1F)
 
 /** the first two covers of each mood's page, kept while the app runs so the grid doesn't ask twice */
-private object MoodCovers {
+internal object MoodCovers {
     val covers = mutableStateMapOf<String, List<String>>()
     private val asked = HashSet<String>()
     private val gate = Semaphore(3) // a page of moods is ~60 pages to read: a few at a time
