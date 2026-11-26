@@ -18,7 +18,8 @@ val EqFrequencies = listOf(31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)
 private const val OctaveQ = 1.41
 const val EqMaxDb = 12.0
 
-class EqPreset(val id: String, val name: String, val gains: List<Double>)
+@Serializable
+data class EqPreset(val id: String, val name: String, val gains: List<Double>)
 
 /** the app's built-in presets, the same numbers */
 val EqPresets = listOf(
@@ -63,7 +64,46 @@ data class AudioLabSettings(
     val crossfeed: Boolean = false,
     val mono: Boolean = false,
     val speed: Double = 1.0,
-)
+    val userPresets: List<EqPreset> = emptyList(),
+) {
+    fun presetNameError(name: String, exceptId: String? = null): String? {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return "desktop_preset_name_empty"
+        val taken = EqPresets.any { it.name.equals(trimmed, ignoreCase = true) } ||
+            userPresets.any { it.id != exceptId && it.name.equals(trimmed, ignoreCase = true) }
+        return if (taken) "desktop_preset_name_taken" else null
+    }
+
+    fun savePreset(name: String, epochMillis: Long): AudioLabSettings {
+        if (presetNameError(name) != null) return this
+        var time = epochMillis
+        while (userPresets.any { it.id == "user_$time" }) time++
+        val preset = EqPreset("user_$time", name.trim(), gains.toList())
+        return copy(presetId = preset.id, gains = preset.gains, userPresets = userPresets + preset)
+    }
+
+    fun renamePreset(id: String, name: String): AudioLabSettings {
+        if (presetNameError(name, id) != null) return this
+        return copy(userPresets = userPresets.map { if (it.id == id) it.copy(name = name.trim()) else it })
+    }
+
+    fun deletePreset(id: String): AudioLabSettings {
+        if (userPresets.none { it.id == id }) return this
+        return copy(presetId = presetId?.takeUnless { it == id }, userPresets = userPresets.filterNot { it.id == id })
+    }
+
+    fun applyPreset(preset: EqPreset) = copy(eqEnabled = true, presetId = preset.id, gains = preset.gains)
+
+    fun editBand(band: Int, gain: Double): AudioLabSettings {
+        if (eqEnabled && gains[band] == gain) return this
+        val curve = gains.toMutableList().also { it[band] = gain }
+        val picked = userPresets.firstOrNull { it.id == presetId }
+        return copy(
+            eqEnabled = true, gains = curve, presetId = picked?.id,
+            userPresets = if (picked == null) userPresets else userPresets.map { if (it.id == picked.id) it.copy(gains = curve) else it },
+        )
+    }
+}
 
 /**
  * The settings as one mpv audio filter: ffmpeg filters in a lavfi chain. Boosts are paid for with a

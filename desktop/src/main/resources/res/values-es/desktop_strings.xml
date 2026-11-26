@@ -67,6 +67,10 @@
     <string name="desktop_audiolab_body">Ecualizador con los presets de la app, reverberación, audio 8D, crossfeed, mono y velocidad</string>
     <string name="desktop_open_audiolab">Abrir Audio Lab</string>
     <string name="desktop_equalizer">Ecualizador</string>
+    <string name="desktop_save_as_preset">Guardar como preset</string>
+    <string name="desktop_preset_name">Nombre del preset</string>
+    <string name="desktop_preset_name_empty">Escribe un nombre para este preset.</string>
+    <string name="desktop_preset_name_taken">Ya existe un preset con ese nombre.</string>
     <string name="desktop_reverb">Reverberación</string>
     <string name="desktop_reverb_room">Habitación</string>
     <string name="desktop_reverb_hall">Sala</string>
