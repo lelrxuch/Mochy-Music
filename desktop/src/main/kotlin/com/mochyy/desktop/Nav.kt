@@ -15,7 +15,6 @@ import com.music.innertube.models.YTItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.withContext
 
 /** A page past the four tabs. */
 sealed interface Route {
@@ -115,7 +114,7 @@ fun <T> rememberLoad(key: Any, attempt: Int = 0, fetch: suspend () -> Result<T>)
     return produceState(cached ?: Load.Loading, key, attempt) {
         if (cached != null && attempt == 0) return@produceState
         value = Load.Loading
-        value = withContext(Dispatchers.IO) { signedIn(fetch) }.fold(
+        value = youtube(fetch).fold(
             onSuccess = { pages[key] = it; Load.Ready(it) },
             onFailure = { Load.Failed(it.message) },
         )

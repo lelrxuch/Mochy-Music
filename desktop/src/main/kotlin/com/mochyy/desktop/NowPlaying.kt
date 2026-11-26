@@ -158,6 +158,9 @@ private fun CoverAndControls(panel: Panel?, onPanel: (Panel) -> Unit) {
                 }
                 formatBadge(codec, rate)?.let { Badge(it); Spacer(Modifier.width(10.dp)) }
                 LikeButton(app.library.isLiked(song.id)) { app.library.toggleLike(song) }
+                Spacer(Modifier.width(8.dp))
+                // everything a song row's menu offers, here too
+                MoreButton(songActions(app, song))
             }
             Spacer(Modifier.height(16.dp))
             val shown = scrub ?: if (duration > 0) (position / duration).toFloat() else 0f
@@ -355,12 +358,12 @@ private fun QueuePanel() {
         ScrollPage(list) {
             LazyColumn(state = list, contentPadding = PaddingValues(bottom = 72.dp)) {
                 itemsIndexed(player.queue, key = { i, song -> "$i-${song.id}" }) { i, song ->
+                    val removable = i != player.index
                     SongRow(
                         song, onClick = { player.jump(i) },
-                        trailing = {
-                            if (i != player.index) {
-                                IconAction(drawable("close"), str("remove_from_queue"), { player.removeAt(i) }, size = 32.dp, iconSize = 16.dp, tint = Dim)
-                            }
+                        extra = if (removable) listOf(str("remove_from_queue") to { player.removeAt(i) }) else emptyList(),
+                        trailing = if (!removable) null else {
+                            { IconAction(drawable("close"), str("remove_from_queue"), { player.removeAt(i) }, size = 32.dp, iconSize = 16.dp, tint = Dim) }
                         },
                     )
                 }

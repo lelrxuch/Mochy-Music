@@ -101,17 +101,30 @@ fun songActions(app: AppState, song: SongItem): List<Pair<String, () -> Unit>> =
     add(str("copy_link") to { copyLink(app, song.shareLink) })
 }
 
+/** the ⋯ of a page full of songs (album, playlist): the same things a song offers, for all of them at once */
+fun songListActions(app: AppState, songs: List<SongItem>): List<Pair<String, () -> Unit>> =
+    if (songs.isEmpty()) emptyList() else listOf(
+        str("play_next") to { app.player.playNext(songs) },
+        str("add_to_queue") to { app.player.addToQueue(songs) },
+        str("add_to_playlist") to { app.showSheet { AddToPlaylistSheet(songs) } },
+        str("desktop_download_all") to { app.player.downloads.download(songs) },
+    )
+
 @Composable
 fun SongRow(
     song: SongItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     number: Int? = null,
+    // what this place adds to the song's menu, such as taking it out of a playlist
+    extra: List<Pair<String, () -> Unit>> = emptyList(),
+    // shown before the menu button, never instead of it
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val app = LocalApp.current
     val playing = app.player.current?.id == song.id
-    ContextMenuArea(items = { songActions(app, song).map { (label, action) -> ContextMenuItem(label, action) } }) {
+    val actions = { songActions(app, song) + extra }
+    ContextMenuArea(items = { actions().map { (label, action) -> ContextMenuItem(label, action) } }) {
         val selected = app.selection.isSelected(song.id)
         Row(
             // while songs are being picked (or Ctrl/Shift is held) a click picks instead of playing
@@ -140,7 +153,8 @@ fun SongRow(
                 Text(song.subtitle(), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = Dim)
             }
             song.duration?.let { Text(formatTime(it.toDouble()), Modifier.padding(horizontal = 12.dp), color = Dim, style = MaterialTheme.typography.bodySmall) }
-            if (trailing != null) trailing() else MoreButton(songActions(app, song))
+            trailing?.invoke()
+            MoreButton(actions())
         }
     }
 }

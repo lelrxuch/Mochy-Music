@@ -6,6 +6,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ContextMenuItem
+import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -135,7 +137,8 @@ fun MiniPlayer(player: Player, onOpen: () -> Unit, modifier: Modifier = Modifier
     val paused = mpv?.paused?.collectAsState()?.value ?: true
     val scope = rememberCoroutineScope()
     val skip = remember { SkipCycleState() }
-    Row(
+    val app = LocalApp.current
+    ContextMenuArea(items = { songActions(app, song).map { (label, action) -> ContextMenuItem(label, action) } }) { Row(
         modifier.height(ChromeHeight).chromeGlass().clickable(onClick = onOpen).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -151,7 +154,7 @@ fun MiniPlayer(player: Player, onOpen: () -> Unit, modifier: Modifier = Modifier
         RoundButton(onClick = { scope.launch { skip.step() }; player.next() }, size = 44.dp) {
             AnimatedSkipGlyph(skip, backwards = false, color = Color.White, width = 19.dp)
         }
-    }
+    } }
 }
 
 /** a round button with the nav bar's highlight under the pointer */

@@ -162,14 +162,21 @@ class Player(
         }
     }
 
-    fun playNext(song: SongItem) {
-        if (current == null) return playSong(song)
-        queue = queue.toMutableList().apply { add(index + 1, song) }
+    fun playNext(song: SongItem) = playNext(listOf(song))
+
+    fun addToQueue(song: SongItem) = addToQueue(listOf(song))
+
+    /** puts [songs] right after the one playing, in their order; with nothing playing they start */
+    fun playNext(songs: List<SongItem>) {
+        if (songs.isEmpty()) return
+        if (current == null) return if (songs.size == 1) playSong(songs[0]) else playList(songs, 0, null)
+        queue = queue.toMutableList().apply { addAll(index + 1, songs) }
     }
 
-    fun addToQueue(song: SongItem) {
-        if (current == null) return playSong(song)
-        queue = queue + song
+    fun addToQueue(songs: List<SongItem>) {
+        if (songs.isEmpty()) return
+        if (current == null) return if (songs.size == 1) playSong(songs[0]) else playList(songs, 0, null)
+        queue = queue + songs
     }
 
     fun removeAt(position: Int) {

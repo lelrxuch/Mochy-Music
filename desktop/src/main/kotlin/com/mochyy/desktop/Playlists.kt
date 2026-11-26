@@ -66,9 +66,7 @@ import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.models.YTItem
 import com.music.innertube.utils.completed
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 
@@ -244,7 +242,7 @@ fun addSongs(app: AppState, target: PlaylistTarget, songs: List<SongItem>) {
         }
         is PlaylistTarget.Online -> app.scope.launch {
             val id = target.playlist.id.removePrefix("VL")
-            val sent = withContext(Dispatchers.IO) { signedIn { YouTube.addVideosToPlaylist(id, songs.map { it.id }) } }
+            val sent = youtube { YouTube.addVideosToPlaylist(id, songs.map { it.id }) }
             app.player.message = if (sent.isSuccess) str("desktop_added_to", target.name) else str("desktop_action_failed")
         }
     }
@@ -258,7 +256,7 @@ fun createPlaylist(app: AppState, name: String, songs: List<SongItem> = emptyLis
         return
     }
     app.scope.launch {
-        val made = withContext(Dispatchers.IO) { signedIn { runCatching { YouTube.createPlaylist(name) } } }
+        val made = youtube { runCatching { YouTube.createPlaylist(name) } }
         val id = made.getOrNull()
         if (id == null) {
             app.player.message = str("desktop_action_failed")
@@ -271,7 +269,7 @@ fun createPlaylist(app: AppState, name: String, songs: List<SongItem> = emptyLis
         )
         app.sync.keepCreated(playlist.id)
         app.library.editSavedPlaylists { listOf(playlist) + it }
-        val added = songs.isEmpty() || withContext(Dispatchers.IO) { signedIn { YouTube.addVideosToPlaylist(id, songs.map { it.id }) } }.isSuccess
+        val added = songs.isEmpty() || youtube { YouTube.addVideosToPlaylist(id, songs.map { it.id }) }.isSuccess
         app.player.message = if (added) str("desktop_created", name) else str("desktop_action_failed")
         app.sync.pull()
     }
@@ -279,7 +277,7 @@ fun createPlaylist(app: AppState, name: String, songs: List<SongItem> = emptyLis
 
 fun renameOnlinePlaylist(app: AppState, playlist: PlaylistItem, name: String, onDone: () -> Unit = {}) {
     app.scope.launch {
-        val renamed = withContext(Dispatchers.IO) { signedIn { YouTube.renamePlaylist(playlist.id.removePrefix("VL"), name) } }
+        val renamed = youtube { YouTube.renamePlaylist(playlist.id.removePrefix("VL"), name) }
         app.player.message = if (renamed.isSuccess) null else str("desktop_action_failed")
         if (renamed.isSuccess) {
             onDone()
@@ -291,7 +289,7 @@ fun renameOnlinePlaylist(app: AppState, playlist: PlaylistItem, name: String, on
 
 fun deleteOnlinePlaylist(app: AppState, playlist: PlaylistItem) {
     app.scope.launch {
-        val deleted = withContext(Dispatchers.IO) { signedIn { YouTube.deletePlaylist(playlist.id.removePrefix("VL")) } }
+        val deleted = youtube { YouTube.deletePlaylist(playlist.id.removePrefix("VL")) }
         if (deleted.isSuccess) {
             app.nav.back()
             app.sync.forgetCreated(playlist.id)
@@ -306,7 +304,7 @@ fun deleteOnlinePlaylist(app: AppState, playlist: PlaylistItem) {
 /** loads a whole album or playlist, then asks which playlist its songs go into */
 fun addAllToPlaylist(app: AppState, load: suspend () -> Result<List<SongItem>>) {
     app.scope.launch {
-        val songs = withContext(Dispatchers.IO) { signedIn(load) }.getOrNull()
+        val songs = youtube(load).getOrNull()
         if (songs.isNullOrEmpty()) app.player.message = str("desktop_action_failed")
         else app.showSheet { AddToPlaylistSheet(songs) }
     }
@@ -314,8 +312,35 @@ fun addAllToPlaylist(app: AppState, load: suspend () -> Result<List<SongItem>>) 
 
 fun downloadAll(app: AppState, load: suspend () -> Result<List<SongItem>>) {
     app.scope.launch {
-        val songs = withContext(Dispatchers.IO) { signedIn(load) }.getOrNull()
+        val songs = youtube(load).getOrNull()
         if (songs.isNullOrEmpty()) app.player.message = str("desktop_action_failed") else app.player.downloads.download(songs)
+    }
+}
+
+/** takes a song out of one of your YouTube playlists; [onDone] updates the page when YouTube agrees */
+fun removeFromOnlinePlaylist(app: AppState, playlistId: String, song: SongItem, onDone: () -> Unit) {
+    val setVideoId = song.setVideoId ?: return
+    app.scope.launch {
+        val removed = youtube { YouTube.removeFromPlaylist(playlistId.removePrefix("VL"), song.id, setVideoId) }
+        if (removed.isSuccess) onDone() else app.player.message = str("desktop_action_failed")
+    }
+}
+
+/** tells YouTube a song of your playlist now sits before [successor] (null: at the end) */
+fun moveInOnlinePlaylist(app: AppState, playlistId: String, moved: SongItem, successor: SongItem?) {
+    val movedId = moved.setVideoId ?: return
+    app.scope.launch {
+        val ok = youtube { YouTube.moveSongPlaylist(playlistId.removePrefix("VL"), movedId, successor?.setVideoId) }
+        if (ok.isFailure) app.player.message = str("desktop_action_failed")
+    }
+}
+
+/** the take-out cross and the drag grip of an editable playlist's row */
+@Composable
+fun EditRowControls(drag: DragReorder, index: Int, count: Int, onRemove: () -> Unit, onMove: (from: Int, to: Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconAction(drawable("close"), str("remove_from_playlist"), onRemove, size = 32.dp, iconSize = 16.dp, tint = Dim)
+        Icon(drawable("drag_handle"), null, Modifier.padding(start = 4.dp).size(22.dp).dragHandle(drag, index, count, onMove), tint = Dim)
     }
 }
 
@@ -375,7 +400,7 @@ fun LocalPlaylistScreen(id: String) {
                         Text(playlist.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Text(songsDetails(songs), color = Dim, style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.height(16.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                             PillButton(str("play"), { app.player.playList(songs, 0, playlist.name) }, drawable("transport_play"))
                             PillButton(str("shuffle"), { app.player.playList(songs, 0, playlist.name, shuffle = true) }, drawable("shuffle"), light = false)
                             PillButton(str("desktop_rename"), {
@@ -388,6 +413,7 @@ fun LocalPlaylistScreen(id: String) {
                                     }
                                 }
                             }, light = false)
+                            MoreButton(songListActions(app, songs))
                         }
                     }
                 }
@@ -397,14 +423,10 @@ fun LocalPlaylistScreen(id: String) {
                 SongRow(
                     song, onClick = { app.player.playList(songs, i, playlist.name) },
                     modifier = Modifier.reorderRow(drag, i, songs.size).padding(horizontal = 12.dp),
+                    extra = listOf(str("remove_from_playlist") to { app.library.removeFromPlaylist(id, i) }),
                     trailing = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconAction(drawable("close"), str("remove_from_playlist"), { app.library.removeFromPlaylist(id, i) }, size = 32.dp, iconSize = 16.dp, tint = Dim)
-                            Icon(
-                                drawable("drag_handle"), null,
-                                Modifier.padding(start = 4.dp).size(22.dp).dragHandle(drag, i, songs.size) { from, to -> app.library.moveInPlaylist(id, from, to) },
-                                tint = Dim,
-                            )
+                        EditRowControls(drag, i, songs.size, onRemove = { app.library.removeFromPlaylist(id, i) }) { from, to ->
+                            app.library.moveInPlaylist(id, from, to)
                         }
                     },
                 )

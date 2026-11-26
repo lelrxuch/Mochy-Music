@@ -1,13 +1,9 @@
 package com.mochyy.desktop
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.fillMaxHeight
-import com.music.innertube.pages.MoodAndGenres
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -50,9 +46,7 @@ import com.music.innertube.YouTube
 import com.music.innertube.YouTube.SearchFilter
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.YTItem
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 
 enum class SearchKind(val labelKey: String, val filter: SearchFilter?) {
     All("desktop_all", null),
@@ -86,7 +80,7 @@ fun SearchScreen() {
         app.library.addSearch(query)
     }
 
-    androidx.compose.foundation.layout.Column {
+    Column {
         PageTitle(str("search"))
         SearchField(search.query, { search.query = it; if (it.isBlank()) search.submitted = null }, ::submit, Modifier.focusRequester(focus))
         Spacer(Modifier.height(12.dp))
@@ -161,10 +155,7 @@ private fun SearchStart(onSubmit: (String) -> Unit) {
             (charts as? Load.Ready)?.value?.sections
                 ?.filter { it.title != "Top music videos" && it.items.isNotEmpty() }
                 ?.forEach { chart -> section(chart.title.ifEmpty { str("charts") }, chart.items) }
-            (moods as? Load.Ready)?.value?.forEach { group ->
-                item { SectionHeader(group.title) }
-                item { MoodChips(group.items) }
-            }
+            (moods as? Load.Ready)?.value?.forEach { group -> item(key = "moods:${group.title}") { MoodSection(group) } }
         }
     }
 }
@@ -175,7 +166,7 @@ private fun Suggestions(query: String, onSubmit: (String) -> Unit) {
     var found by remember { mutableStateOf<Pair<List<String>, List<YTItem>>?>(null) }
     LaunchedEffect(query) {
         delay(250) // wait for a pause in typing instead of asking on every key
-        withContext(Dispatchers.IO) { YouTube.searchSuggestions(query) }.onSuccess { found = it.queries to it.recommendedItems }
+        youtube { YouTube.searchSuggestions(query) }.onSuccess { found = it.queries to it.recommendedItems }
     }
     val list = rememberLazyListState()
     ScrollPage(list) {
@@ -201,7 +192,7 @@ private fun Results(query: String, kind: SearchKind, onKind: (SearchKind) -> Uni
     val app = LocalApp.current
     var attempt by remember(query, kind) { mutableIntStateOf(0) }
     val list = rememberLazyListState()
-    androidx.compose.foundation.layout.Column {
+    Column {
         ChoiceChips(SearchKind.entries, kind, { str(it.labelKey) }, onKind)
         if (kind.filter == null) {
             val load = rememberLoad("summary" to query, attempt) { YouTube.searchSummary(query) }
@@ -239,25 +230,6 @@ private fun Results(query: String, kind: SearchKind, onKind: (SearchKind) -> Uni
 @Composable
 private fun NoResults() {
     Text(str("no_results_found"), Modifier.padding(24.dp), color = Dim, style = MaterialTheme.typography.bodyLarge)
-}
-
-/** the moods and genres, each a pill with its colour stripe (ExploreScreen.kt's MoodAndGenresButton) */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MoodChips(items: List<MoodAndGenres.Item>) {
-    val app = LocalApp.current
-    FlowRow(Modifier.padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        items.forEach { mood ->
-            Row(
-                Modifier.revealOnAppear("mood:${mood.endpoint.browseId}${mood.title}").press3D().height(44.dp).clip(RoundedCornerShape(12.dp)).background(Raised)
-                    .clickable { app.nav.open(Route.Browse(mood.endpoint.browseId, mood.endpoint.params, mood.title)) },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(Modifier.width(6.dp).fillMaxHeight().background(Color(mood.stripeColor)))
-                Text(mood.title, Modifier.padding(horizontal = 14.dp), style = MaterialTheme.typography.labelLarge)
-            }
-        }
-    }
 }
 
 /** a mood, genre or chart page: its sections of songs, albums and playlists */

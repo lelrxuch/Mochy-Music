@@ -31,10 +31,8 @@ import androidx.compose.ui.unit.dp
 import com.music.innertube.YouTube
 import com.music.innertube.pages.HomePage
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /** The home feed, kept for the whole run so switching tabs doesn't reload it. */
 class HomeModel(private val scope: CoroutineScope) {
@@ -65,7 +63,7 @@ class HomeModel(private val scope: CoroutineScope) {
         moreJob?.cancel()
         state = Load.Loading
         job = scope.launch {
-            withContext(Dispatchers.IO) { signedIn { YouTube.home(params = chip?.endpoint?.params) } }
+            youtube { YouTube.home(params = chip?.endpoint?.params) }
                 .onSuccess { page ->
                     if (chips.isEmpty()) chips = page.chips.orEmpty()
                     sections = page.sections.filter { it.items.isNotEmpty() }
@@ -80,7 +78,7 @@ class HomeModel(private val scope: CoroutineScope) {
         val token = continuation ?: return
         if (moreJob?.isActive == true) return
         moreJob = scope.launch {
-            withContext(Dispatchers.IO) { signedIn { YouTube.home(continuation = token) } }.onSuccess { page ->
+            youtube { YouTube.home(continuation = token) }.onSuccess { page ->
                 sections = sections + page.sections.filter { it.items.isNotEmpty() }
                 continuation = page.continuation
             }

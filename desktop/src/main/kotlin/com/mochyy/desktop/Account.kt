@@ -180,6 +180,9 @@ suspend fun <T> signedIn(fetch: suspend () -> Result<T>): Result<T> {
     return if (unauthorized && AccountStore.current?.refresh() == true) fetch() else first
 }
 
+/** the one way to call YouTube from the app: off the UI thread, with the 401 retry of [signedIn] */
+suspend fun <T> youtube(call: suspend () -> Result<T>): Result<T> = withContext(Dispatchers.IO) { signedIn(call) }
+
 private val visitorLock = Mutex()
 
 /**
