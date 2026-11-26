@@ -44,7 +44,8 @@ tasks.test { useJUnitPlatform() }
 
 // the Android app's own fonts, icons and translated texts, copied in at build time so both apps look and read the same
 tasks.processResources {
-    from("../assets/icon.png")
+    // the window's icon: the Android launcher icon, drawn for the desktop in icons/mochy-desktop.svg
+    from("icons/mochy-desktop.png") { rename { "icon.png" } }
     from("../app/src/main/res") {
         include("font/*.ttf", "raw/*.svg", "drawable/*.xml", "values*/strings.xml", "values*/mochy_strings.xml")
         into("res")
@@ -62,7 +63,7 @@ compose.desktop.application {
         // ponytail: bundles the whole JRE (~bigger download), trim with suggestRuntimeModules if size matters
         includeAllModules = true
         linux {
-            iconFile.set(rootProject.file("../fastlane/metadata/android/en-US/images/icon.png"))
+            iconFile.set(rootProject.file("icons/mochy-desktop.png"))
             appCategory = "AudioVideo"
             shortcut = true
         }

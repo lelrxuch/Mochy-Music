@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Mochy's icon, from the Android app's launcher (app/src/main/res/drawable/ic_launcher_mark.xml) -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#242424"/>
+      <stop offset="1" stop-color="#141414"/>
+    </linearGradient>
+  </defs>
+  <rect x="32" y="32" width="448" height="448" rx="100" fill="url(#bg)"/>
+  <!-- a faint edge so the dark tile still reads on a dark wallpaper -->
+  <rect x="33" y="33" width="446" height="446" rx="99" fill="none" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="2"/>
+  <g transform="translate(32 32) scale(2.30137) translate(-48.6667 -48.6667) translate(28.5 28.5)">
+    <path d="M163.5 96.3493C180.167 105.972 180.167 130.028 163.5 139.651L108 171.694C91.3333 181.316 70.5 169.288 70.5 150.043V85.9569C70.5 66.7119 91.3333 54.6838 108 64.3063L163.5 96.3493Z"
+          fill="#FFFFFF" stroke="#212121" stroke-width="19" stroke-linejoin="round"/>
+    <path d="M97 112L108.5 98L120 112" fill="none" stroke="#212121" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M110.325 125C111.871 133.439 121.868 148.704 142.944 149.92" fill="none" stroke="#212121" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -10,6 +10,8 @@ dest="$HOME/Applications/mochy-desktop"
 rm -rf "$dest"
 mkdir -p "$HOME/Applications" "$HOME/.local/share/applications"
 cp -r desktop/build/compose/binaries/main/app/mochy-desktop "$dest"
+# the vector icon stays sharp at any size the app menu or the dock draws it
+cp desktop/icons/mochy-desktop.svg "$dest/lib/mochy-desktop.svg"
 
 cat > "$HOME/.local/share/applications/mochy-desktop.desktop" <<EOF
 [Desktop Entry]
@@ -17,7 +19,7 @@ Type=Application
 Name=Mochy
 Comment=Mochy Music para Linux
 Exec=$dest/bin/mochy-desktop
-Icon=$dest/lib/mochy-desktop.png
+Icon=$dest/lib/mochy-desktop.svg
 Categories=AudioVideo;Audio;Player;
 StartupWMClass=com-mochyy-desktop-MainKt
 EOF
