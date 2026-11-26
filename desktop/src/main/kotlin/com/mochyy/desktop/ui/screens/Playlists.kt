@@ -152,12 +152,24 @@ fun PillField(value: String, onChange: (String) -> Unit, placeholder: String, on
 
 /** asks for a name; [initial] fills it in for a rename */
 @Composable
-fun NameSheet(title: String, confirm: String, initial: String = "", onConfirm: (String) -> Unit) {
+fun NameSheet(
+    title: String, confirm: String, initial: String = "", placeholder: String = str("playlist_name"),
+    validate: (String) -> String? = { null }, onConfirm: (String) -> Unit,
+) {
     val app = LocalApp.current
     var name by remember { mutableStateOf(initial) }
-    val done = { if (name.isNotBlank()) { app.closeSheet(); onConfirm(name.trim()) } }
+    var error by remember { mutableStateOf<String?>(null) }
+    val done = {
+        val trimmed = name.trim()
+        error = validate(trimmed)
+        if (error == null && trimmed.isNotEmpty()) {
+            app.closeSheet()
+            onConfirm(trimmed)
+        }
+    }
     Sheet(title) {
-        PillField(name, { name = it }, str("playlist_name"), done)
+        PillField(name, { name = it; error = null }, placeholder, done)
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
         Spacer(Modifier.height(20.dp))
         Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PillButton(str("cancel"), app::closeSheet, light = false)

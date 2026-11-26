@@ -6,6 +6,8 @@ import com.mochyy.desktop.playback.*
 import com.mochyy.desktop.library.*
 import com.mochyy.desktop.account.*
 import com.mochyy.desktop.ui.*
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -60,16 +62,34 @@ fun AudioLabScreen() {
                     OnOff(lab.eqEnabled) { update(lab.copy(eqEnabled = it)) }
                     Spacer(Modifier.height(16.dp))
                     EqBands(lab.gains, enabled = lab.eqEnabled) { band, gain ->
-                        update(lab.copy(eqEnabled = true, presetId = null, gains = lab.gains.toMutableList().also { it[band] = gain }))
+                        update(app.library.data.audioLab.editBand(band, gain))
                     }
                     Spacer(Modifier.height(16.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         EqPresets.forEach { preset ->
                             Chip(preset.name, lab.eqEnabled && lab.presetId == preset.id) {
-                                update(lab.copy(eqEnabled = true, presetId = preset.id, gains = preset.gains))
+                                update(lab.applyPreset(preset))
+                            }
+                        }
+                        lab.userPresets.forEach { preset ->
+                            ContextMenuArea(items = {
+                                listOf(
+                                    ContextMenuItem(str("desktop_rename")) { app.showSheet { PresetNameSheet(preset) } },
+                                    ContextMenuItem(str("delete")) {
+                                        app.showSheet {
+                                            ConfirmSheet(str("desktop_delete_title", preset.name), str("desktop_delete_body"), str("delete")) {
+                                                app.library.setAudioLab(app.library.data.audioLab.deletePreset(preset.id))
+                                            }
+                                        }
+                                    },
+                                )
+                            }) {
+                                Chip(preset.name, lab.presetId == preset.id) { update(lab.applyPreset(preset)) }
                             }
                         }
                     }
+                    Spacer(Modifier.height(14.dp))
+                    PillButton(str("desktop_save_as_preset"), { app.showSheet { PresetNameSheet() } }, light = false)
                 }
             }
             item {
@@ -98,6 +118,21 @@ fun AudioLabScreen() {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PresetNameSheet(preset: EqPreset? = null) {
+    val library = LocalApp.current.library
+    NameSheet(
+        title = if (preset == null) str("desktop_save_as_preset") else str("desktop_rename"),
+        confirm = str("save"),
+        initial = preset?.name.orEmpty(),
+        placeholder = str("desktop_preset_name"),
+        validate = { name -> library.data.audioLab.presetNameError(name, preset?.id)?.let { str(it) } },
+    ) { name ->
+        val lab = library.data.audioLab
+        library.setAudioLab(if (preset == null) lab.savePreset(name, System.currentTimeMillis()) else lab.renamePreset(preset.id, name))
     }
 }
 
