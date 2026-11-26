@@ -49,7 +49,8 @@ Android: `playback/`, `utils/YTPlayerUtils`, `crossmix/`.
 
 ## Fase 4: Audio Lab — primera versión hecha
 Hecho: ecualizador de 10 bandas con los 20 presets de la app, reverberación, 8D, crossfeed, mono, velocidad.
-Pendiente: guardar presets propios, corrección de auriculares (AutoEq), compresor de volumen.
+Hecho: presets propios del ecualizador (PR #1, escrito por GPT Astra y revisado).
+Pendiente: presets de efectos (reverberación, 8D, velocidad...), corrección de auriculares (AutoEq), compresor de volumen.
 Android: `eq/`, `ui/screens/audiolab/`, `ui/screens/equalizer/`.
 - Ecualizador con presets, reverberación, audio 8D y demás efectos, con los filtros de mpv (lavfi).
 
@@ -76,8 +77,8 @@ Hecho: paquetes por función. El núcleo (`text/`, `playback/`, `library/`, `acc
 `ui/` y `ui/screens/` lo muestran; `Main`, `Nav`, `AppState` y `Mpris` los conectan. `ArchitectureCheck`
 falla la compilación si el núcleo importa la interfaz.
 `AppState` se queda como está: ya es solo el punto donde se juntan las piezas, cada una con su estado.
+Hecho: caché de páginas con límite (60) y búsqueda filtrada que carga más al bajar.
 Pendiente:
-- Caché de páginas con límite (LRU) y búsqueda filtrada que carga más al bajar.
 - Pruebas de interacción de pantallas (clic → resultado), no solo capturas.
 
 ## Fuera de alcance (solo tienen sentido en Android)
