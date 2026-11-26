@@ -14,6 +14,7 @@ import com.music.innertube.models.SongItem
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.nio.file.Files
+import java.sql.DriverManager
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 import kotlin.test.Test
@@ -67,6 +68,27 @@ class LibraryDbCheck {
     }
 
     @Test
+    fun discordSettingsUseDefaultsForOlderLibrariesAndSurviveReopening() = withDir { dir ->
+        val file = File(dir, "library.db")
+        LibraryStore(file).apply { setVolume(48.0); close() }
+        DriverManager.getConnection("jdbc:sqlite:${file.path}").use { db ->
+            db.createStatement().use {
+                it.executeUpdate("DELETE FROM settings WHERE key IN ('discordEnabled', 'discordApplicationId')")
+            }
+        }
+        val store = LibraryStore(file)
+        assertEquals(48.0, store.data.volume)
+        assertEquals(false, store.data.discordEnabled)
+        assertEquals("", store.data.discordApplicationId)
+        store.setDiscordEnabled(true)
+        store.setDiscordApplicationId("123")
+        val reopened = reopen(store, file)
+        assertEquals(true, reopened.data.discordEnabled)
+        assertEquals("123", reopened.data.discordApplicationId)
+        reopened.close()
+    }
+
+    @Test
     fun everyChangeSurvivesClosingTheApp() = withDir { dir ->
         // a long random session of everything the app does to its library, closed and reopened every so often
         val file = File(dir, "library.db")
@@ -98,11 +120,13 @@ class LibraryDbCheck {
                 12 -> if (random.nextBoolean()) store.addDownload(DownloadedSong(songs.random(random), random.nextDouble(-8.0, 2.0)))
                 else store.data.downloads.randomOrNull(random)?.let { store.removeDownload(it.song.id) }
                 13 -> store.setPending(songs.shuffled(random).take(random.nextInt(5)).map { PendingChange(it.id, PendingChange.SONG, it.id, random.nextBoolean()) })
-                14 -> when (random.nextInt(4)) {
+                14 -> when (random.nextInt(6)) {
                     0 -> store.setVolume(random.nextDouble(0.0, 130.0))
                     1 -> store.setNormalize(random.nextBoolean())
                     2 -> store.setAudioLab(AudioLabSettings(eqEnabled = random.nextBoolean(), gains = List(EqFrequencies.size) { random.nextDouble(-12.0, 12.0) }))
-                    else -> store.setHighQuality(random.nextBoolean())
+                    3 -> store.setHighQuality(random.nextBoolean())
+                    4 -> store.setDiscordEnabled(random.nextBoolean())
+                    else -> store.setDiscordApplicationId(if (random.nextBoolean()) "" else step.toString())
                 }
                 else -> store.editSavedPlaylists { it.reversed() }
             }

@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 /**
  * The shape of the code, checked on every build so it doesn't drift as the app grows:
  *
- *   text, playback, library, account   the core: what the app does, no drawing
+ *   text, playback, library, account, integrations   the core: what the app does, no drawing
  *   ui, ui/screens                     how it looks, on top of the core
  *   (root)                             Main, navigation and AppState, which wire the two together
  *
@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
  */
 class ArchitectureCheck {
     private val root = File("src/main/kotlin/com/mochyy/desktop")
-    private val core = listOf("text", "playback", "library", "account")
+    private val core = listOf("text", "playback", "library", "account", "integrations")
 
     private val forbidden = listOf(
         Regex("""androidx\.compose\.(ui|foundation|material3|animation)\b""") to "Compose drawing",

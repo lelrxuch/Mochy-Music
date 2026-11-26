@@ -59,6 +59,8 @@ internal class LibraryDb private constructor(private val connection: Connection)
             highQuality = settings["highQuality"]?.toBooleanStrictOrNull() ?: defaults.highQuality,
             reportPlays = settings["reportPlays"]?.toBooleanStrictOrNull() ?: defaults.reportPlays,
             normalize = settings["normalize"]?.toBooleanStrictOrNull() ?: defaults.normalize,
+            discordEnabled = settings["discordEnabled"]?.toBooleanStrictOrNull() ?: defaults.discordEnabled,
+            discordApplicationId = settings["discordApplicationId"] ?: defaults.discordApplicationId,
             audioLab = settings["audioLab"]?.let { runCatching { json.decodeFromString(AudioLabSettings.serializer(), it) }.getOrNull() }
                 ?: defaults.audioLab,
         )
@@ -105,6 +107,8 @@ internal class LibraryDb private constructor(private val connection: Connection)
             setting("highQuality", before.highQuality, new.highQuality, full) { it.toString() }
             setting("reportPlays", before.reportPlays, new.reportPlays, full) { it.toString() }
             setting("normalize", before.normalize, new.normalize, full) { it.toString() }
+            setting("discordEnabled", before.discordEnabled, new.discordEnabled, full) { it.toString() }
+            setting("discordApplicationId", before.discordApplicationId, new.discordApplicationId, full) { it }
             setting("audioLab", before.audioLab, new.audioLab, full) { json.encodeToString(AudioLabSettings.serializer(), it) }
         }
         dirty = false

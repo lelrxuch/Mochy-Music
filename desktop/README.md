@@ -38,6 +38,9 @@ la propia app):
   en una base SQLite: `~/.local/share/mochy-desktop/library.db` (un `library.json` de antes se
   importa solo la primera vez y queda como `library.json.migrated`).
 - Ajustes: calidad de audio, borrar historiales y créditos.
+- Discord: puedes mostrar qué canción escuchas en la app de escritorio de Discord. Crea una
+  aplicación en [Discord Developer Portal](https://discord.com/developers/applications), pega su
+  ID en Ajustes → Discord y activa el interruptor.
 - Clic derecho en canciones, atajos (Espacio, Esc, Alt+←, Ctrl+←/→ canción, Ctrl+↑/↓ volumen, Ctrl+F buscar, Ctrl+L me gusta) y botón "atrás" del ratón.
 
 - Cuenta de YouTube Music (Ajustes): toma la sesión del navegador donde ya la iniciaste (Firefox, Zen,
@@ -48,5 +51,5 @@ la propia app):
 
 Falta respecto a la app Android: sincronizar biblioteca y "me gusta" con YouTube Music, importar de
 Spotify/Apple Music, descargas, ecualizador y efectos, estilos alternativos del reproductor (iPod,
-tocadiscos), Discord, y los clientes de respaldo de `YTPlayerUtils` para canciones que el cliente
+tocadiscos), y los clientes de respaldo de `YTPlayerUtils` para canciones que el cliente
 principal rechaza.

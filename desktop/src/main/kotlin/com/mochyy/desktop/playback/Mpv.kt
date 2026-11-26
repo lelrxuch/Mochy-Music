@@ -42,6 +42,8 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
 
     val position = MutableStateFlow(0.0)
     val duration = MutableStateFlow(0.0)
+    val seekRevision = MutableStateFlow(0L)
+    private var seekPending = false
     val paused = MutableStateFlow(false)
     val volume = MutableStateFlow(100.0)
     val codec = MutableStateFlow<String?>(null)
@@ -133,6 +135,11 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
     private fun handle(raw: String) {
         val message = runCatching { Json.parseToJsonElement(raw).jsonObject }.getOrNull() ?: return
         when (message["event"]?.jsonPrimitive?.content) {
+            "seek" -> seekPending = true
+            "playback-restart" -> if (seekPending) {
+                seekPending = false
+                seekRevision.value++
+            }
             "property-change" -> {
                 val data = message["data"] as? JsonPrimitive
                 when (message["name"]?.jsonPrimitive?.content) {

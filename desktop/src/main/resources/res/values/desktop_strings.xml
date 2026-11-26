@@ -95,4 +95,10 @@
     <string name="desktop_error_other_body">Something unexpected happened. Copy the details if you want to report it.</string>
     <string name="desktop_copy_details">Copy details</string>
     <string name="desktop_version">Mochy for Linux %1$s</string>
+    <string name="desktop_discord_toggle">Show what I’m listening to on Discord</string>
+    <string name="desktop_discord_id">Discord Application ID</string>
+    <string name="desktop_discord_help">Get the Application ID at discord.com/developers/applications.</string>
+    <string name="desktop_discord_connected">Connected</string>
+    <string name="desktop_discord_not_found">Discord not found</string>
+    <string name="desktop_discord_no_id">No Application ID</string>
 </resources>
