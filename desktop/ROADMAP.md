@@ -70,6 +70,14 @@ Android: `ui/player/styles/`, `ipod/`, `studio/`, `bedside/`, `modules/`, `ui/sc
   asistente de bienvenida, perfil.
 - Equivalente de PC de la ventana flotante: mini reproductor siempre encima.
 
+## Base: que aguante crecer
+Hecho: la biblioteca en SQLite (`LibraryDb.kt`): cada cambio escribe solo sus filas, en un hilo aparte.
+Pendiente, en este orden:
+- Separar `AppState` por funciones (player, library, account, sync), cada una con su estado y acciones.
+- Paquetes por función (`playback/`, `library/`, `ui/screens/`...) en vez de un solo paquete.
+- Caché de páginas con límite (LRU) y búsqueda filtrada que carga más al bajar.
+- Pruebas de interacción de pantallas (clic → resultado), no solo capturas.
+
 ## Fuera de alcance (solo tienen sentido en Android)
 Android Auto (`car/`), widgets, Android TV (`ui/tv/`), gestos de pantalla, aviso de llamadas,
 voz del sistema, actualizador de la tienda.

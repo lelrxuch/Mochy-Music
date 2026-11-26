@@ -35,7 +35,8 @@ la propia app):
   repetir, letra sincronizada (LrcLib, luego YouTube Music) y cola editable.
 - Radio automática al reproducir una canción suelta, como la app.
 - Biblioteca local: canciones que te gustan, historial, álbumes, artistas y playlists guardados,
-  en `~/.local/share/mochy-desktop/library.json`.
+  en una base SQLite: `~/.local/share/mochy-desktop/library.db` (un `library.json` de antes se
+  importa solo la primera vez y queda como `library.json.migrated`).
 - Ajustes: calidad de audio, borrar historiales y créditos.
 - Clic derecho en canciones, atajos (Espacio, Esc, Alt+←, Ctrl+←/→) y botón "atrás" del ratón.
 
