@@ -72,9 +72,11 @@ Android: `ui/player/styles/`, `ipod/`, `studio/`, `bedside/`, `modules/`, `ui/sc
 
 ## Base: que aguante crecer
 Hecho: la biblioteca en SQLite (`LibraryDb.kt`): cada cambio escribe solo sus filas, en un hilo aparte.
-Pendiente, en este orden:
-- Separar `AppState` por funciones (player, library, account, sync), cada una con su estado y acciones.
-- Paquetes por función (`playback/`, `library/`, `ui/screens/`...) en vez de un solo paquete.
+Hecho: paquetes por función. El núcleo (`text/`, `playback/`, `library/`, `account/`) no dibuja nada;
+`ui/` y `ui/screens/` lo muestran; `Main`, `Nav`, `AppState` y `Mpris` los conectan. `ArchitectureCheck`
+falla la compilación si el núcleo importa la interfaz.
+`AppState` se queda como está: ya es solo el punto donde se juntan las piezas, cada una con su estado.
+Pendiente:
 - Caché de páginas con límite (LRU) y búsqueda filtrada que carga más al bajar.
 - Pruebas de interacción de pantallas (clic → resultado), no solo capturas.
 
