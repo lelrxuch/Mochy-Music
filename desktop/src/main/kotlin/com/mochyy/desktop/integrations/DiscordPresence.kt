@@ -85,7 +85,7 @@ internal class DiscordPresence(
                 lastAttempt = id to (sessionSong?.id ?: state.songId)
                 retryAt = System.nanoTime() + retryMs * 1_000_000
             }
-            delay(100)
+            delay(if (id.isEmpty()) 500 else 100)
         }
     }
 

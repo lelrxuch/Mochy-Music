@@ -128,9 +128,10 @@ fun Sheet(title: String, content: @Composable ColumnScope.() -> Unit) {
 
 /** a one-line text field in the app's pill style; Enter calls [onDone] */
 @Composable
-fun PillField(value: String, onChange: (String) -> Unit, placeholder: String, onDone: () -> Unit, modifier: Modifier = Modifier) {
+fun PillField(value: String, onChange: (String) -> Unit, placeholder: String, onDone: () -> Unit, modifier: Modifier = Modifier, autoFocus: Boolean = true) {
     val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    // a sheet's field takes the keyboard at once; one inside a page waits to be clicked
+    if (autoFocus) LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     Box(
         modifier.fillMaxWidth().height(48.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.1f)).padding(horizontal = 18.dp),
         contentAlignment = Alignment.CenterStart,

@@ -114,7 +114,8 @@ fun main() {
                 DiscordPlayback(song, mpv.position.value, duration, seekRevision = seekRevision)
             } else null
             discord.desired.value = DiscordPresenceState(id, song?.id, playback)
-            delay(200)
+            // a glance a second while Discord is off; five while it shows the song
+            delay(if (id.isEmpty()) 1_000 else 200)
         }
     }
     val icon = BitmapPainter(Image.makeFromEncoded(AppState::class.java.getResource("/icon.png")!!.readBytes()).toComposeImageBitmap())

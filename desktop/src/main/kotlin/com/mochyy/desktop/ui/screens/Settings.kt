@@ -30,8 +30,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -50,8 +48,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
@@ -128,39 +124,29 @@ fun SettingsScreen() {
     }
 }
 
+/** "Listening to Mochy" on Discord: on/off, the Discord application's ID, and whether Discord answered */
 @Composable
 private fun DiscordCard() {
     val library = LocalApp.current.library
     val settings = library.data
     val connectedId by LocalDiscordConnection.current.collectAsState()
     val id = settings.discordApplicationId
-    val discordToggleLabel = str("desktop_discord_toggle")
-    SettingsCard("Discord", null) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(discordToggleLabel, Modifier.weight(1f))
-            Switch(
-                settings.discordEnabled, library::setDiscordEnabled,
-                Modifier.semantics { contentDescription = discordToggleLabel },
-            )
-        }
-        OutlinedTextField(
-            value = id,
-            onValueChange = { input ->
-                val trimmed = input.trim()
-                if (trimmed.length <= 20 && trimmed.all { it in '0'..'9' }) library.setDiscordApplicationId(trimmed)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(str("desktop_discord_id")) },
-            supportingText = { Text(str("desktop_discord_help")) },
-            singleLine = true,
+    SettingsCard("Discord", str("desktop_discord_toggle")) {
+        ChoiceChipsInline(listOf(true, false), settings.discordEnabled, { str(if (it) "desktop_on" else "desktop_off") }, library::setDiscordEnabled)
+        Spacer(Modifier.height(14.dp))
+        PillField(
+            id,
+            { input -> input.trim().takeIf { it.length <= 20 && it.all { c -> c in '0'..'9' } }?.let(library::setDiscordApplicationId) },
+            str("desktop_discord_id"), onDone = {}, autoFocus = false,
         )
+        Text(str("desktop_discord_help"), Modifier.padding(top = 8.dp, start = 4.dp), color = Dim, style = MaterialTheme.typography.bodySmall)
         val status = when {
             id.isEmpty() -> "desktop_discord_no_id"
             !settings.discordEnabled -> "desktop_off"
             connectedId == id -> "desktop_discord_connected"
             else -> "desktop_discord_not_found"
         }
-        Text(str(status), color = Dim, style = MaterialTheme.typography.bodySmall)
+        Text(str(status), Modifier.padding(top = 4.dp, start = 4.dp), style = MaterialTheme.typography.bodyMedium)
     }
 }
 
