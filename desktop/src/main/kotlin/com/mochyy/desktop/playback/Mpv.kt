@@ -21,6 +21,7 @@ import java.io.File
 import java.net.UnixDomainSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
+import java.util.concurrent.TimeUnit
 
 /**
  * mpv running hidden in the background. Mochy sends it commands over mpv's JSON IPC socket
@@ -39,6 +40,8 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
     @Volatile private lateinit var process: Process
     @Volatile private lateinit var channel: SocketChannel
     @Volatile private var closed = false
+    // which mpv this is: bumped by every start, so two parts that notice the same death start one mpv, not two
+    @Volatile private var generation = 0
 
     // what was set on mpv, put back on a fresh one after a restart
     private var volumeSetting = 100.0
@@ -73,6 +76,7 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
 
     /** starts mpv and its control socket, and gives it back the volume and the Audio Lab settings */
     private fun start() {
+        generation++
         socket.delete()
         process = ProcessBuilder(
             // --load-scripts=no keeps mpv-mpris (and any personal mpv script) out: Mochy has its own media controls
@@ -80,7 +84,8 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
         ).redirectOutput(ProcessBuilder.Redirect.DISCARD).redirectError(ProcessBuilder.Redirect.DISCARD).start()
         val opened = connect()
         channel = opened
-        Thread({ readLoop(opened) }, "mpv-ipc").apply { isDaemon = true }.start()
+        val started = generation
+        Thread({ readLoop(opened, started) }, "mpv-ipc").apply { isDaemon = true }.start()
         write("observe_property", 1, "time-pos")
         write("observe_property", 2, "duration")
         write("observe_property", 3, "pause")
@@ -93,19 +98,22 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
     }
 
     /**
-     * mpv is gone: start a new one, at most 5 times a minute so a mpv that can't run doesn't loop.
-     * Answers whether there's a running mpv again.
+     * mpv number [failed] stopped answering: start a new one, at most 5 times a minute so a mpv that
+     * can't run doesn't loop. Answers whether there's a running mpv again.
      */
     @Synchronized
-    private fun revive(): Boolean {
+    private fun revive(failed: Int): Boolean {
         if (closed) return false
-        if (process.isAlive && channel.isOpen) return true
+        // another part already noticed and started a fresh one
+        if (generation != failed) return isRunning
         val now = System.currentTimeMillis()
         while (restartTimes.isNotEmpty() && now - restartTimes.first() > 60_000) restartTimes.removeFirst()
         if (restartTimes.size >= 5) return false
         restartTimes.addLast(now)
         runCatching { channel.close() }
-        process.destroy()
+        // a mpv that stopped answering is no use even if it hasn't quite exited yet
+        process.destroyForcibly()
+        runCatching { process.waitFor(2, TimeUnit.SECONDS) }
         return runCatching { start() }
             .onSuccess {
                 // a fresh mpv has nothing loaded
@@ -164,7 +172,8 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
     @Synchronized
     private fun send(vararg args: Any) {
         if (closed) return
-        val sent = runCatching { write(*args) }.isSuccess || (revive() && runCatching { write(*args) }.isSuccess)
+        val seen = generation
+        val sent = runCatching { write(*args) }.isSuccess || (revive(seen) && runCatching { write(*args) }.isSuccess)
         if (!sent) System.err.println("mpv: a command didn't reach mpv: ${args.firstOrNull()}")
     }
 
@@ -189,7 +198,7 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
     }
 
     // mpv answers with one JSON object per line
-    private fun readLoop(from: SocketChannel) {
+    private fun readLoop(from: SocketChannel, started: Int) {
         val buffer = ByteBuffer.allocate(64 * 1024)
         val line = ByteArrayOutputStream()
         runCatching {
@@ -208,9 +217,9 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
             }
         }
         // the socket closes when the app quits, that ends this loop; any other time mpv died under us
-        if (closed || from !== channel) return
+        if (closed || started != generation) return
         val where = position.value to (!paused.value && duration.value > 0)
-        if (revive()) revived.tryEmit(where)
+        if (revive(started)) revived.tryEmit(where)
     }
 
     private fun handle(raw: String) {
