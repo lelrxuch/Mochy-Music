@@ -41,3 +41,24 @@ class MpvCheck {
         }
     }
 }
+
+/** mpv dying under the app (a sound device going away, a crash) must not leave Mochy mute until a restart. */
+class MpvRevivalCheck {
+    @Test
+    fun aDeadMpvIsStartedAgainWithItsSettings() = runBlocking {
+        if (runCatching { ProcessBuilder("mpv", "--version").start().waitFor() }.isFailure) return@runBlocking println("no mpv, skipped")
+        Mpv(listOf("--ao=null")) {}.use { mpv ->
+            mpv.setVolume(42.0)
+            withTimeout(5_000) { while (mpv.volume.value != 42.0) delay(50) }
+            val first = mpv.pid
+            ProcessHandle.of(first).ifPresent { it.destroyForcibly() }
+            // it notices on its own, without waiting for the next command
+            withTimeout(10_000) { while (!(mpv.isRunning && mpv.pid != first)) delay(50) }
+            withTimeout(5_000) { while (mpv.volume.value != 42.0) delay(50) }
+            assertTrue(mpv.paused.value, "a fresh mpv has nothing playing")
+            // and it takes commands again
+            mpv.setVolume(17.0)
+            withTimeout(5_000) { while (mpv.volume.value != 17.0) delay(50) }
+        }
+    }
+}

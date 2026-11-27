@@ -4,6 +4,8 @@ import com.mochyy.desktop.text.*
 import com.mochyy.desktop.library.*
 import com.mochyy.desktop.account.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import java.io.IOException
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -28,17 +30,33 @@ import java.nio.channels.SocketChannel
 // what mpv sends when no client asked for a particular one
 private const val DEFAULT_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0"
 
-class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason: String) -> Unit) : AutoCloseable {
+class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileEnd: (reason: String) -> Unit) : AutoCloseable {
     // mpv's socket accepts any command, even running programs, so it lives in the user's private runtime dir, not shared /tmp
     private val socket = File(
         System.getenv("XDG_RUNTIME_DIR") ?: System.getProperty("java.io.tmpdir"),
         "mochy-mpv-${ProcessHandle.current().pid()}.sock",
     )
-    private val process = ProcessBuilder(
-        // --load-scripts=no keeps mpv-mpris (and any personal mpv script) out: Mochy has its own media controls
-        listOf("mpv", "--idle=yes", "--no-video", "--no-terminal", "--load-scripts=no", "--input-ipc-server=${socket.path}") + extraArgs,
-    ).redirectOutput(ProcessBuilder.Redirect.DISCARD).redirectError(ProcessBuilder.Redirect.DISCARD).start()
-    private val channel = connect()
+    @Volatile private lateinit var process: Process
+    @Volatile private lateinit var channel: SocketChannel
+    @Volatile private var closed = false
+
+    // what was set on mpv, put back on a fresh one after a restart
+    private var volumeSetting = 100.0
+    private var filterSetting = ""
+    private var speedSetting = 1.0
+    private val restartTimes = ArrayDeque<Long>()
+
+    /**
+     * mpv died on its own (an audio device going away, a crash) and was started again: where the
+     * song was, and whether it was playing, so the player can pick it back up.
+     */
+    val revived = MutableSharedFlow<Pair<Double, Boolean>>(extraBufferCapacity = 1)
+
+    /** whether mpv is there to take commands */
+    val isRunning get() = !closed && process.isAlive
+
+    /** for the tests that kill mpv on purpose */
+    internal val pid get() = process.pid()
 
     val position = MutableStateFlow(0.0)
     val duration = MutableStateFlow(0.0)
@@ -50,13 +68,52 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
     val sampleRate = MutableStateFlow<Int?>(null)
 
     init {
-        Thread(::readLoop, "mpv-ipc").apply { isDaemon = true }.start()
-        send("observe_property", 1, "time-pos")
-        send("observe_property", 2, "duration")
-        send("observe_property", 3, "pause")
-        send("observe_property", 4, "volume")
-        send("observe_property", 5, "audio-codec-name")
-        send("observe_property", 6, "audio-params/samplerate")
+        start()
+    }
+
+    /** starts mpv and its control socket, and gives it back the volume and the Audio Lab settings */
+    private fun start() {
+        socket.delete()
+        process = ProcessBuilder(
+            // --load-scripts=no keeps mpv-mpris (and any personal mpv script) out: Mochy has its own media controls
+            listOf("mpv", "--idle=yes", "--no-video", "--no-terminal", "--load-scripts=no", "--input-ipc-server=${socket.path}") + extraArgs,
+        ).redirectOutput(ProcessBuilder.Redirect.DISCARD).redirectError(ProcessBuilder.Redirect.DISCARD).start()
+        val opened = connect()
+        channel = opened
+        Thread({ readLoop(opened) }, "mpv-ipc").apply { isDaemon = true }.start()
+        write("observe_property", 1, "time-pos")
+        write("observe_property", 2, "duration")
+        write("observe_property", 3, "pause")
+        write("observe_property", 4, "volume")
+        write("observe_property", 5, "audio-codec-name")
+        write("observe_property", 6, "audio-params/samplerate")
+        write("set_property", "volume", volumeSetting)
+        if (filterSetting.isNotEmpty()) write("set_property", "af", filterSetting)
+        if (speedSetting != 1.0) write("set_property", "speed", speedSetting)
+    }
+
+    /**
+     * mpv is gone: start a new one, at most 5 times a minute so a mpv that can't run doesn't loop.
+     * Answers whether there's a running mpv again.
+     */
+    @Synchronized
+    private fun revive(): Boolean {
+        if (closed) return false
+        if (process.isAlive && channel.isOpen) return true
+        val now = System.currentTimeMillis()
+        while (restartTimes.isNotEmpty() && now - restartTimes.first() > 60_000) restartTimes.removeFirst()
+        if (restartTimes.size >= 5) return false
+        restartTimes.addLast(now)
+        runCatching { channel.close() }
+        process.destroy()
+        return runCatching { start() }
+            .onSuccess {
+                // a fresh mpv has nothing loaded
+                duration.value = 0.0
+                paused.value = true
+            }
+            .onFailure { System.err.println("mpv: couldn't start it again: ${it.message}") }
+            .isSuccess
     }
 
     fun play(url: String, title: String, userAgent: String?, cookies: File? = null, gainDb: Double = 0.0) {
@@ -75,25 +132,45 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
     fun togglePause() = send("cycle", "pause")
 
     /** ffmpeg filters for the sound (Audio Lab); "" takes them all away */
-    fun setFilters(chain: String) = send("set_property", "af", chain)
+    fun setFilters(chain: String) {
+        filterSetting = chain
+        send("set_property", "af", chain)
+    }
 
-    fun setSpeed(speed: Double) = send("set_property", "speed", speed)
+    fun setSpeed(speed: Double) {
+        speedSetting = speed
+        send("set_property", "speed", speed)
+    }
 
     fun seek(seconds: Double) = send("seek", seconds, "absolute")
 
-    fun setVolume(percent: Double) = send("set_property", "volume", percent.coerceIn(0.0, 100.0))
+    fun setVolume(percent: Double) {
+        volumeSetting = percent.coerceIn(0.0, 100.0)
+        send("set_property", "volume", volumeSetting)
+    }
 
     fun stop() = send("stop")
 
     override fun close() {
-        runCatching { send("quit") }
+        // marked first, so the socket closing under the read loop isn't taken for a crash
+        closed = true
+        runCatching { write("quit") }
         runCatching { channel.close() }
         process.destroy()
         socket.delete()
     }
 
+    /** a command to mpv; if mpv died since the last one, it's started again first. Never throws: a click mustn't crash the app */
     @Synchronized
     private fun send(vararg args: Any) {
+        if (closed) return
+        val sent = runCatching { write(*args) }.isSuccess || (revive() && runCatching { write(*args) }.isSuccess)
+        if (!sent) System.err.println("mpv: a command didn't reach mpv: ${args.firstOrNull()}")
+    }
+
+    @Synchronized
+    private fun write(vararg args: Any) {
+        if (!process.isAlive) throw IOException("mpv isn't running")
         val command = buildJsonObject {
             put("command", JsonArray(args.map { if (it is Number) JsonPrimitive(it) else JsonPrimitive(it.toString()) }))
         }
@@ -112,11 +189,11 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
     }
 
     // mpv answers with one JSON object per line
-    private fun readLoop() {
+    private fun readLoop(from: SocketChannel) {
         val buffer = ByteBuffer.allocate(64 * 1024)
         val line = ByteArrayOutputStream()
         runCatching {
-            while (channel.read(buffer) >= 0) {
+            while (from.read(buffer) >= 0) {
                 buffer.flip()
                 while (buffer.hasRemaining()) {
                     val byte = buffer.get()
@@ -129,7 +206,11 @@ class Mpv(extraArgs: List<String> = emptyList(), private val onFileEnd: (reason:
                 }
                 buffer.clear()
             }
-        } // the socket closes when the app quits, that ends this loop
+        }
+        // the socket closes when the app quits, that ends this loop; any other time mpv died under us
+        if (closed || from !== channel) return
+        val where = position.value to (!paused.value && duration.value > 0)
+        if (revive()) revived.tryEmit(where)
     }
 
     private fun handle(raw: String) {

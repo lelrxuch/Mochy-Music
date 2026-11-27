@@ -109,6 +109,16 @@ class Player(
         applyAudioLab()
         restoreQueue()
         mpv?.let { player -> scope.launch { player.paused.collect { reporter.onPlayingChanged(!it) } } }
+        // mpv died and came back empty: the song carries on from where it was if it was playing,
+        // and if it was paused, play picks it up from there
+        mpv?.let { player ->
+            scope.launch {
+                player.revived.collect { (position, wasPlaying) ->
+                    pendingSeek = position
+                    if (wasPlaying && current != null && !loading) startAt(index, keepSeek = true)
+                }
+            }
+        }
         // the restored song starts where it was left, once mpv knows how long it is
         mpv?.let { player ->
             scope.launch {
@@ -206,6 +216,8 @@ class Player(
         val player = mpv ?: return
         // after a failed load there's nothing in mpv to unpause, so the song is asked for again
         if (player.duration.value <= 0.0 && current != null && !loading) startAt(index, keepSeek = true) else player.togglePause()
+        // a play that reached no mpv says so instead of doing nothing
+        if (!player.isRunning) message = str("desktop_cant_play")
     }
 
     fun seek(seconds: Double) {
@@ -343,6 +355,7 @@ class Player(
                     // Android's rule: the gain is minus the measured loudness, between -15 and +3 dB
                     val gain = if (library.data.normalize) (-(it.loudnessDb ?: 0.0)).coerceIn(-15.0, 3.0) else 0.0
                     player.play(it.url, "${song.title} - ${song.artistNames()}", it.userAgent, cookies, gain)
+                    if (!player.isRunning) message = str("desktop_cant_play")
                     reporter.enabled = library.data.reportPlays
                     reporter.onSongStart(song.id, (song.duration ?: 0) * 1000L)
                 }
