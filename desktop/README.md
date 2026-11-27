@@ -49,7 +49,6 @@ la propia app):
   `~/.local/share/mochy-desktop/account.json` con permisos 600. Google no deja iniciar sesión dentro de
   navegadores incrustados, por eso no hay ventana de login propia como la WebView de Android.
 
-Falta respecto a la app Android: sincronizar biblioteca y "me gusta" con YouTube Music, importar de
-Spotify/Apple Music, descargas, ecualizador y efectos, estilos alternativos del reproductor (iPod,
-tocadiscos), y los clientes de respaldo de `YTPlayerUtils` para canciones que el cliente
-principal rechaza.
+Falta respecto a la app Android: crossfade entre canciones, más proveedores de letras, Last.fm,
+importar de Spotify/Apple Music, presets de efectos, estilos alternativos del reproductor (iPod,
+tocadiscos) y estadísticas. El detalle y el orden están en `ROADMAP.md`.
