@@ -55,7 +55,8 @@ class MpvRevivalCheck {
             // it notices on its own, without waiting for the next command
             withTimeout(10_000) { while (!(mpv.isRunning && mpv.pid != first)) delay(50) }
             withTimeout(5_000) { while (mpv.volume.value != 42.0) delay(50) }
-            assertTrue(mpv.paused.value, "a fresh mpv has nothing playing")
+            // a fresh mpv has nothing playing, so it says paused (mpv reports it a moment later)
+            withTimeout(5_000) { while (!mpv.paused.value) delay(50) }
             // and it takes commands again
             mpv.setVolume(17.0)
             withTimeout(5_000) { while (mpv.volume.value != 17.0) delay(50) }
