@@ -1,0 +1,45 @@
+Downloading https://services.gradle.org/distributions/gradle-9.3.1-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+
+Welcome to Gradle 9.3.1!
+
+Here are the highlights of this release:
+ - Test reporting improvements
+ - Error and warning improvements
+ - Build authoring improvements
+
+For more details see https://docs.gradle.org/9.3.1/release-notes.html
+
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :convertXmlValueResourcesForMain NO-SOURCE
+> Task :copyNonXmlValueResourcesForMain NO-SOURCE
+> Task :prepareComposeResourcesTaskForMain NO-SOURCE
+> Task :generateResourceAccessorsForMain SKIPPED
+> Task :generateActualResourceCollectorsForMain SKIPPED
+> Task :generateComposeResClass SKIPPED
+> Task :assembleMainResources
+> Task :processResources
+> Task :convertXmlValueResourcesForTest NO-SOURCE
+> Task :copyNonXmlValueResourcesForTest NO-SOURCE
+> Task :prepareComposeResourcesTaskForTest NO-SOURCE
+> Task :generateResourceAccessorsForTest SKIPPED
+> Task :compileKotlin
+w: file:///home/runner/work/Mochy-Music/Mochy-Music/desktop/src/main/kotlin/com/mochyy/desktop/ui/Ambient.kt:183:37 'val Canvas.nativeCanvas: Canvas' is deprecated. Naming alignment to avoid ambiguity: use [Canvas.skiaCanvas] extension instead.
+w: file:///home/runner/work/Mochy-Music/Mochy-Music/desktop/src/main/kotlin/com/mochyy/desktop/ui/Res.kt:111:19 'fun loadXmlImageVector(inputSource: InputSource, density: Density): ImageVector' is deprecated. Migrate to the Compose resources library. See https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-images-resources.html.
+w: file:///home/runner/work/Mochy-Music/Mochy-Music/desktop/src/main/kotlin/com/mochyy/desktop/ui/Res.kt:134:81 'fun loadSvgPainter(inputStream: InputStream, density: Density): Painter' is deprecated. Migrate to the Compose resources library. See https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-images-resources.html.
+w: file:///home/runner/work/Mochy-Music/Mochy-Music/providers/innertube/src/main/kotlin/com/music/innertube/YouTube.kt:289:32 Unnecessary safe call on a non-null receiver of type 'Tabs.Tab.TabRenderer'.
+w: file:///home/runner/work/Mochy-Music/Mochy-Music/providers/innertube/src/main/kotlin/com/music/innertube/YouTube.kt:305:32 Unnecessary safe call on a non-null receiver of type 'Tabs.Tab.TabRenderer'.
+w: file:///home/runner/work/Mochy-Music/Mochy-Music/providers/innertube/src/main/kotlin/com/music/innertube/pages/RelatedPage.kt:118:58 Unnecessary safe call on a non-null receiver of type 'Runs'.
+
+> Task :compileJava NO-SOURCE
+> Task :classes
+> Task :jar
+
+> Task :compileTestKotlin
+w: file:///home/runner/work/Mochy-Music/Mochy-Music/desktop/src/test/kotlin/com/mochyy/desktop/LibraryDbCheck.kt:59:45 Redundant creation of Json format. Creating instances for each usage can be slow.
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/compile-1795748915961.json
+
+BUILD SUCCESSFUL in 1m 30s
+5 actionable tasks: 5 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.3.1/userguide/configuration_cache_enabling.html

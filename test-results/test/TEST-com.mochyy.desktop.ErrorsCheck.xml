@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mochyy.desktop.ErrorsCheck" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-27T03:10:08.025Z" hostname="runnervm0hi8g" time="0.013">
+  <properties/>
+  <testcase name="anythingElseIsUnexpected()" classname="com.mochyy.desktop.ErrorsCheck" time="0.01"/>
+  <testcase name="noConnectionIsOffline()" classname="com.mochyy.desktop.ErrorsCheck" time="0.001"/>
+  <testcase name="slowIsATimeout()" classname="com.mochyy.desktop.ErrorsCheck" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

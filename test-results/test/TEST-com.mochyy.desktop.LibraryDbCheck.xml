@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mochyy.desktop.LibraryDbCheck" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-27T03:10:16.091Z" hostname="runnervm0hi8g" time="1.275">
+  <properties/>
+  <testcase name="aLikeIsOneRowEvenInABigLibrary()" classname="com.mochyy.desktop.LibraryDbCheck" time="0.033"/>
+  <testcase name="aBrokenDatabaseIsKeptAside()" classname="com.mochyy.desktop.LibraryDbCheck" time="0.024"/>
+  <testcase name="aLibraryJsonFromBeforeIsMovedInWhole()" classname="com.mochyy.desktop.LibraryDbCheck" time="0.02"/>
+  <testcase name="noRoomBetweenTwoRowsAsksForARewrite()" classname="com.mochyy.desktop.LibraryDbCheck" time="0.001"/>
+  <testcase name="bigLibraryStaysFast()" classname="com.mochyy.desktop.LibraryDbCheck" time="0.639"/>
+  <testcase name="discordSettingsUseDefaultsForOlderLibrariesAndSurviveReopening()" classname="com.mochyy.desktop.LibraryDbCheck" time="0.015"/>
+  <testcase name="aBrokenLibraryJsonIsKeptAsideToo()" classname="com.mochyy.desktop.LibraryDbCheck" time="0.007"/>
+  <testcase name="everyChangeSurvivesClosingTheApp()" classname="com.mochyy.desktop.LibraryDbCheck" time="0.438"/>
+  <testcase name="historyKeepsTheLast500InOrder()" classname="com.mochyy.desktop.LibraryDbCheck" time="0.095"/>
+  <system-out><![CDATA[200 likes in a 10 000 song library, written and read back: 439 ms
+]]></system-out>
+  <system-err><![CDATA[library: couldn't open library.db, kept aside: [SQLITE_NOTADB] File opened that is not a database file (file is not a database)
+library: couldn't read library.json, kept aside: Unexpected JSON token at offset 2: Expected quotation mark '"', but had 'n' instead at path: $
+JSON input: { not json
+]]></system-err>
+</testsuite>

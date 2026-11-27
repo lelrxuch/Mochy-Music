@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mochyy.desktop.AudioLabCheck" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-27T03:10:07.831Z" hostname="runnervm0hi8g" time="0.194">
+  <properties/>
+  <testcase name="savingPicksAnIndependentCopyOfTheCurve()" classname="com.mochyy.desktop.AudioLabCheck" time="0.005"/>
+  <testcase name="bandEditsFollowTheSelectedPreset()" classname="com.mochyy.desktop.AudioLabCheck" time="0.0"/>
+  <testcase name="nothingOnMeansNoFilters()" classname="com.mochyy.desktop.AudioLabCheck" time="0.001"/>
+  <testcase name="settingsWrittenBeforeUserPresetsStillLoad()" classname="com.mochyy.desktop.AudioLabCheck" time="0.012"/>
+  <testcase name="everyPresetHasTenBands()" classname="com.mochyy.desktop.AudioLabCheck" time="0.001"/>
+  <testcase name="boostsArePaidForWithPreamp()" classname="com.mochyy.desktop.AudioLabCheck" time="0.003"/>
+  <testcase name="effectsJoinOneChain()" classname="com.mochyy.desktop.AudioLabCheck" time="0.004"/>
+  <testcase name="presetsSurviveClosingAndReopeningTheLibrary()" classname="com.mochyy.desktop.AudioLabCheck" time="0.16"/>
+  <testcase name="renamingAndDeletingKeepTheCurrentSound()" classname="com.mochyy.desktop.AudioLabCheck" time="0.002"/>
+  <testcase name="namesMustBePresentAndUniqueWhenSavingOrRenaming()" classname="com.mochyy.desktop.AudioLabCheck" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>

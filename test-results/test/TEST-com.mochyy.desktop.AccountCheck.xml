@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mochyy.desktop.AccountCheck" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-27T03:10:07.695Z" hostname="runnervm0hi8g" time="0.107">
+  <properties/>
+  <testcase name="aBrowserSessionSignsIn()" classname="com.mochyy.desktop.AccountCheck" time="0.049"/>
+  <testcase name="chromiumKeysMatchPbkdf2()" classname="com.mochyy.desktop.AccountCheck" time="0.011"/>
+  <testcase name="pastedCookiesAndSyncIds()" classname="com.mochyy.desktop.AccountCheck" time="0.008"/>
+  <testcase name="chromiumCookieRoundTrip()" classname="com.mochyy.desktop.AccountCheck" time="0.021"/>
+  <system-out><![CDATA[no browser signed in to YouTube, skipped
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

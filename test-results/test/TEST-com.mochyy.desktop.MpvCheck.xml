@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mochyy.desktop.MpvCheck" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-27T03:10:17.368Z" hostname="runnervm0hi8g" time="0.002">
+  <properties/>
+  <testcase name="mpvPlaysPausesSeeksAndFinishesASong()" classname="com.mochyy.desktop.MpvCheck" time="0.002"/>
+  <system-out><![CDATA[skipped on CI
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

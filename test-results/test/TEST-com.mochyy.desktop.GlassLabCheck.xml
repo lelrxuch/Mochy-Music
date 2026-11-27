@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mochyy.desktop.GlassLabCheck" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-27T03:10:08.038Z" hostname="runnervm0hi8g" time="8.052">
+  <properties/>
+  <testcase name="glass()" classname="com.mochyy.desktop.GlassLabCheck" time="8.051"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

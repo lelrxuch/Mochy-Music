@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mochyy.desktop.StreamCheck" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-27T03:11:12.362Z" hostname="runnervm0hi8g" time="0.005">
+  <properties/>
+  <testcase name="searchFindsASongAndItsAudioStreamAnswers()" classname="com.mochyy.desktop.StreamCheck" time="0.002"/>
+  <testcase name="lrcLinesGetTheirTimes()" classname="com.mochyy.desktop.StreamCheck" time="0.002"/>
+  <system-out><![CDATA[skipped on CI
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
