@@ -116,9 +116,9 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
         runCatching { process.waitFor(2, TimeUnit.SECONDS) }
         return runCatching { start() }
             .onSuccess {
-                // a fresh mpv has nothing loaded
+                // a fresh mpv has nothing loaded: it shows as paused (as at start-up) until the song is asked for again
                 duration.value = 0.0
-                paused.value = true
+                write("set_property", "pause", true)
             }
             .onFailure { System.err.println("mpv: couldn't start it again: ${it.message}") }
             .isSuccess
