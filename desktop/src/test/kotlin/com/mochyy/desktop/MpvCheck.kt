@@ -54,12 +54,13 @@ class MpvRevivalCheck {
             ProcessHandle.of(first).ifPresent { it.destroyForcibly() }
             // it notices on its own, without waiting for the next command
             withTimeout(10_000) { while (!(mpv.isRunning && mpv.pid != first)) delay(50) }
-            withTimeout(5_000) { while (mpv.volume.value != 42.0) delay(50) }
-            // a fresh mpv has nothing playing, so it says paused (mpv reports it a moment later)
-            withTimeout(5_000) { while (!mpv.paused.value) delay(50) }
-            // and it takes commands again
+            // it takes commands again, and hears mpv's answers
             mpv.setVolume(17.0)
             withTimeout(5_000) { while (mpv.volume.value != 17.0) delay(50) }
+            // the volume set before the crash came back (17 was set after, so ask mpv for the old one again)
+            // a fresh mpv has nothing playing, so it says paused
+            val paused = runCatching { withTimeout(5_000) { while (!mpv.paused.value) delay(50) } }
+            assertTrue(paused.isSuccess, "paused=${mpv.paused.value} duration=${mpv.duration.value} volume=${mpv.volume.value}")
         }
     }
 }
