@@ -45,6 +45,8 @@ Android: `playback/`, `utils/YTPlayerUtils`, `crossmix/`.
 - Clientes de respaldo para canciones que YouTube rechaza.
 - Temporizador de sueño, cola que sobrevive al cierre, reporte de escuchas al historial de YouTube.
 - Caché y descargas para escuchar sin conexión.
+- Si mpv muere con la app abierta (cambio de dispositivo de audio, un fallo), se abre solo otra vez con
+  los mismos ajustes y la canción sigue donde iba.
 - Crossmix: fundidos y transiciones entre canciones (dos instancias de mpv); normalización.
 
 ## Fase 4: Audio Lab — primera versión hecha
