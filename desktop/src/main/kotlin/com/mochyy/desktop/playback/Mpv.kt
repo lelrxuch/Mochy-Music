@@ -65,7 +65,10 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
     val duration = MutableStateFlow(0.0)
     val seekRevision = MutableStateFlow(0L)
     private var seekPending = false
+    /** not playing: paused, or nothing loaded (mpv says "not paused" while it has nothing to play) */
     val paused = MutableStateFlow(false)
+    private var pauseProperty = false
+    private var idle = true
     val volume = MutableStateFlow(100.0)
     val codec = MutableStateFlow<String?>(null)
     val sampleRate = MutableStateFlow<Int?>(null)
@@ -74,11 +77,8 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
         start()
     }
 
-    /**
-     * Starts mpv and its control socket, and gives it back the volume and the Audio Lab settings.
-     * [paused] starts it paused, set before the app asks for its state, so the first answer is already "paused".
-     */
-    private fun start(paused: Boolean = false) {
+    /** starts mpv and its control socket, and gives it back the volume and the Audio Lab settings */
+    private fun start() {
         generation++
         socket.delete()
         process = ProcessBuilder(
@@ -89,13 +89,13 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
         channel = opened
         val started = generation
         Thread({ readLoop(opened, started) }, "mpv-ipc").apply { isDaemon = true }.start()
-        if (paused) write("set_property", "pause", true)
         write("observe_property", 1, "time-pos")
         write("observe_property", 2, "duration")
         write("observe_property", 3, "pause")
         write("observe_property", 4, "volume")
         write("observe_property", 5, "audio-codec-name")
         write("observe_property", 6, "audio-params/samplerate")
+        write("observe_property", 7, "idle-active")
         write("set_property", "volume", volumeSetting)
         if (filterSetting.isNotEmpty()) write("set_property", "af", filterSetting)
         if (speedSetting != 1.0) write("set_property", "speed", speedSetting)
@@ -118,8 +118,8 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
         // a mpv that stopped answering is no use even if it hasn't quite exited yet
         process.destroyForcibly()
         runCatching { process.waitFor(2, TimeUnit.SECONDS) }
-        // a fresh mpv has nothing loaded: it shows as paused until the song is asked for again
-        return runCatching { start(paused = true) }
+        // a fresh mpv has nothing loaded, so it shows as paused (see idle) until the song is asked for again
+        return runCatching { start() }
             .onSuccess { duration.value = 0.0 }
             .onFailure { System.err.println("mpv: couldn't start it again: ${it.message}") }
             .isSuccess
@@ -236,7 +236,14 @@ class Mpv(private val extraArgs: List<String> = emptyList(), private val onFileE
                 when (message["name"]?.jsonPrimitive?.content) {
                     "time-pos" -> position.value = data?.doubleOrNull ?: 0.0
                     "duration" -> duration.value = data?.doubleOrNull ?: 0.0
-                    "pause" -> paused.value = data?.booleanOrNull ?: false
+                    "pause" -> {
+                        pauseProperty = data?.booleanOrNull ?: false
+                        paused.value = pauseProperty || idle
+                    }
+                    "idle-active" -> {
+                        idle = data?.booleanOrNull ?: false
+                        paused.value = pauseProperty || idle
+                    }
                     "volume" -> volume.value = data?.doubleOrNull ?: volume.value
                     "audio-codec-name" -> codec.value = data?.contentOrNull
                     "audio-params/samplerate" -> sampleRate.value = data?.intOrNull

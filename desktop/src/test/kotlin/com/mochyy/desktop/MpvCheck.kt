@@ -57,8 +57,7 @@ class MpvRevivalCheck {
             // it takes commands again, and hears mpv's answers
             mpv.setVolume(17.0)
             withTimeout(5_000) { while (mpv.volume.value != 17.0) delay(50) }
-            // the volume set before the crash came back (17 was set after, so ask mpv for the old one again)
-            // a fresh mpv has nothing playing, so it says paused
+            // a fresh mpv has nothing playing, so it shows as paused
             val paused = runCatching { withTimeout(5_000) { while (!mpv.paused.value) delay(50) } }
             assertTrue(paused.isSuccess, "paused=${mpv.paused.value} duration=${mpv.duration.value} volume=${mpv.volume.value}")
         }
